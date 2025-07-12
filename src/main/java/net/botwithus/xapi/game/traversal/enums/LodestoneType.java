@@ -61,7 +61,8 @@ public enum LodestoneType {
             LodestoneNetwork.open();
             script.delay(Rand.nextInt(600, 900));
         }
-        if (MiniMenu.doAction(Action.COMPONENT, 1, -1, interactId)) {
+
+        if (MiniMenu.doAction(Action.COMPONENT, 1, -1 , interactId) > 0) {
             int wax = VarDomain.getVarBitValue(28623);
             int quick = VarDomain.getVarBitValue(28622);
             if (quick == 1 && wax > 0) {

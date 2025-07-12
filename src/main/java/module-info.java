@@ -8,7 +8,6 @@ module BotWithUs.xapi {
     exports net.botwithus.xapi.game.inventory;
     exports net.botwithus.xapi.game.traversal.enums;
     exports net.botwithus.xapi.game.traversal;
-    exports net.botwithus.xapi.game;
     exports net.botwithus.xapi.query.base;
     exports net.botwithus.xapi.query.result;
     exports net.botwithus.xapi.query;
@@ -19,6 +18,8 @@ module BotWithUs.xapi {
     exports net.botwithus.xapi.script.permissive.base;
     exports net.botwithus.xapi.script.permissive;
     exports net.botwithus.xapi.script.task;
+    exports net.botwithus.xapi.script.ui;
+    exports net.botwithus.xapi.script.ui.interfaces;
     exports net.botwithus.xapi.script;
     exports net.botwithus.xapi.util.collection;
     exports net.botwithus.xapi.util.statistic;

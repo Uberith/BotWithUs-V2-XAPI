@@ -84,4 +84,14 @@ public class LeafNode extends TreeNode {
     public boolean isLeaf() {
         return true;
     }
+
+    /**
+     * Clones this LeafNode with a new description.
+     *
+     * @param description The new description for the cloned node.
+     * @return A new LeafNode instance with the same properties but a different description.
+     */
+    public LeafNode clone(String description) {
+        return new LeafNode(script, description, getDefinedIn(), runnable);
+    }
 }

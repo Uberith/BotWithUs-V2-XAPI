@@ -2,12 +2,9 @@ package net.botwithus.xapi.script.permissive.node;
 
 import net.botwithus.scripts.Script;
 import net.botwithus.xapi.script.permissive.Interlock;
-import net.botwithus.xapi.script.permissive.Permissive;
 import net.botwithus.xapi.script.permissive.serialization.InterlockJson;
-import net.botwithus.xapi.script.permissive.serialization.PermissiveJson;
 import net.botwithus.xapi.script.permissive.serialization.TreeNodeJson;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -99,6 +96,7 @@ public class Branch extends TreeNode {
             return false;
         }
         activeInterlock = Arrays.stream(interlocks).filter(Interlock::isActive).findFirst().orElse(null);
+        setLatestValidate(activeInterlock != null);
         return activeInterlock != null;
     }
 
@@ -207,6 +205,22 @@ public class Branch extends TreeNode {
             successNode,
             newFailureNode,
             interlocks != null ? interlocks.clone() : null
+        );
+    }
+    
+    /**
+     * Creates a copy of this branch with a new description
+     * @param description The new description for the branch
+     * @return A new Branch with the same interlocks and nodes but different description
+     */
+    public Branch clone(String description) {
+        return new Branch(
+                getScript(),
+                description,
+                getDefinedIn(),
+                successNode,
+                failureNode,
+                interlocks != null ? interlocks.clone() : null
         );
     }
 

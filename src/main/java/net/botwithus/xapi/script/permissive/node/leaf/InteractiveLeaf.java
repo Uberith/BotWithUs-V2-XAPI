@@ -9,10 +9,12 @@ import java.util.regex.Pattern;
 
 public class InteractiveLeaf<T extends Interactive> extends LeafNode {
 
+
     private T target;
     private int optionIndex = -1;
     private String optionText = "";
     private Runnable successAction = null;
+    private Callable<Boolean> successCallable = null;
 
     /**
      * Constructor to initialize InteractiveLeaf with a target.
@@ -48,15 +50,68 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
         this.successAction = successAction;
     }
 
+    /***
+     * Constructor to initialize InteractiveLeaf with a target and a callable logic.
+     * @param script The parent script.
+     * @param successCallable The callable logic for the leaf node.
+     */
+    public InteractiveLeaf(Script script, Callable<Boolean> successCallable) {
+        super(script);
+        this.successCallable = successCallable;
+    }
+
+    /***
+     * Constructor to initialize InteractiveLeaf with a target, a description, and a callable logic.
+     * @param script The parent script.
+     * @param desc The description of the leaf node.
+     * @param successCallable The callable logic for the leaf node.
+     */
+    public InteractiveLeaf(Script script, String desc, Callable<Boolean> successCallable) {
+        super(script, desc);
+        this.successCallable = successCallable;
+    }
+
+    /***
+     * Constructor to initialize InteractiveLeaf with a target, a description, a definedIn string, and a callable logic.
+     * @param script The parent script.
+     * @param desc The description of the leaf node.
+     * @param definedIn The definedIn string of the leaf node.
+     * @param successCallable The callable logic for the leaf node.
+     */
+    public InteractiveLeaf(Script script, String desc, String definedIn, Callable<Boolean> successCallable) {
+        super(script, desc, definedIn);
+        this.successCallable = successCallable;
+    }
+
     private Callable<Boolean> interact() {
         return () -> {
             if (optionIndex > -1) {
-                var val = target.interact(optionIndex);
-                successAction.run();
+                var val = target.interact(optionIndex) > 0;
+                if (successAction != null) {
+                    successAction.run();
+                } else if (successCallable != null) {
+                    try {
+                        if (successCallable.call()) {
+                            return val;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
                 return val;
             } else if (!optionText.isEmpty()) {
-                var val = target.interact(optionText);
-                successAction.run();
+                var val = target.interact(optionText) > 0;
+                if (successAction != null) {
+                    successAction.run();
+                } else if (successCallable != null) {
+                    try {
+                        if (successCallable.call()) {
+                            return val;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
                 return val;
             }
             return false;
@@ -94,7 +149,7 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
      * @return true if the interaction was successful, false otherwise.
      */
     public boolean interact(int option) {
-        return target.interact(option);
+        return target.interact(option) > 0;
     }
 
     /**
@@ -104,16 +159,19 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
      * @return true if the interaction was successful, false otherwise.
      */
     public boolean interact(String option) {
-        return target.interact(option);
+        return target.interact(option) > 0;
     }
 
     /**
      * Interact with the target using a regex pattern.
+     * Note: This feature is not yet implemented.
      *
      * @param pattern The pattern to match interaction options.
      * @return true if the interaction was successful, false otherwise.
+     * @throws UnsupportedOperationException This feature is not yet implemented
      */
     public boolean interact(Pattern pattern) {
-        return target.interact(pattern);
+        // return target.interact(pattern);
+        throw new UnsupportedOperationException("Pattern-based interaction is not yet implemented");
     }
 }

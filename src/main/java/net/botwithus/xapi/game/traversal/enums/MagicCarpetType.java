@@ -31,7 +31,7 @@ public enum MagicCarpetType {
         if (!MagicCarpetNetwork.isOpen()) {
             MagicCarpetNetwork.open();
         } else {
-            return MiniMenu.doAction(Action.COMPONENT, 1, -1, getId());
+            return MiniMenu.doAction(Action.COMPONENT, 1, -1, getId()) > 0;
         }
         return false;
     }

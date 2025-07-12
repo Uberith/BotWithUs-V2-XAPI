@@ -20,6 +20,6 @@ public class MagicCarpetNetwork {
      */
     public static boolean open() {
         var npc = NpcQuery.newQuery().name("Rug merchant").options("Travel").results().nearest();
-        return npc != null && npc.interact("Travel");
+        return npc != null && npc.interact("Travel") > 0;
     }
 }
