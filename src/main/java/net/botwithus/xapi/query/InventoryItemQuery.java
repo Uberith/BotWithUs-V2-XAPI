@@ -10,7 +10,7 @@ import java.util.Iterator;
 /**
  * A query class for filtering and retrieving inventory items based on various criteria.
  */
-public class InventoryItemQuery extends ItemQuery<InventoryItem> {
+public class InventoryItemQuery extends ItemQuery<InventoryItem, InventoryItemQuery> {
 
     /**
      * Constructs a new InvItemQuery with the specified inventory IDs.

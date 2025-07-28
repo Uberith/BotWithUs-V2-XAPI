@@ -130,6 +130,17 @@ public class SceneObjectQuery extends EntityQuery<SceneObject> {
         return name(String::contentEquals, names);
     }
 
+    public SceneObjectQuery name(java.util.regex.Pattern... patterns) {
+        if (patterns.length == 0) {
+            return this;
+        }
+        this.root = this.root.and(t -> {
+            String objName = t.getName();
+            return objName != null && Arrays.stream(patterns).anyMatch(p -> p.matcher(objName).matches());
+        });
+        return this;
+    }
+
     /**
      * Filters scene objects by options using a predicate.
      *
@@ -156,5 +167,24 @@ public class SceneObjectQuery extends EntityQuery<SceneObject> {
      */
     public SceneObjectQuery option(String... option) {
         return option(String::contentEquals, option);
+    }
+
+    /**
+     * Filters scene objects by options using regular expression patterns.
+     *
+     * @param patterns the regex patterns to filter options by
+     * @return the updated SceneObjectQuery
+     */
+    public SceneObjectQuery option(java.util.regex.Pattern... patterns) {
+        if (patterns.length == 0) {
+            return this;
+        }
+        this.root = this.root.and(t -> {
+            var objOptions = t.getOptions();
+            return objOptions != null && objOptions.stream().anyMatch(opt ->
+                Arrays.stream(patterns).anyMatch(p -> p.matcher(opt).matches())
+            );
+        });
+        return this;
     }
 }

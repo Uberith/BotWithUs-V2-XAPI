@@ -1,7 +1,7 @@
 package net.botwithus.xapi.util.statistic;
 
 import net.botwithus.rs3.stats.Stats;
-import net.botwithus.xapi.util.Math;
+import net.botwithus.xapi.util.BwuMath;
 import net.botwithus.xapi.util.time.DurationStringFormat;
 import net.botwithus.xapi.util.time.Stopwatch;
 import net.botwithus.xapi.util.StringUtils;
@@ -44,7 +44,7 @@ public class XPInfo {
     }
 
     public int getXPHour(Stopwatch watch) {
-        return Math.getUnitsPerHour(watch, getGainedXP());
+        return BwuMath.getUnitsPerHour(watch, getGainedXP());
     }
 
     public int getSecondsUntilLevel(Stopwatch watch) {

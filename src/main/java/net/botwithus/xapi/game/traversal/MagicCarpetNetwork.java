@@ -19,7 +19,7 @@ public class MagicCarpetNetwork {
      * @return {@code true} if the shop was successfully opened, {@code false} otherwise.
      */
     public static boolean open() {
-        var npc = NpcQuery.newQuery().name("Rug merchant").options("Travel").results().nearest();
+        var npc = NpcQuery.newQuery().name("Rug merchant").option("Travel").results().nearest();
         return npc != null && npc.interact("Travel") > 0;
     }
 }

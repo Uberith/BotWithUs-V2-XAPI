@@ -85,4 +85,13 @@ public class ResultSet<T> implements Iterable<T> {
     public int size() {
         return results.size();
     }
+
+    /**
+     * Checks if the result set is empty.
+     *
+     * @return true if the result set is empty, false otherwise
+     */
+    public boolean isEmpty() {
+        return results.isEmpty();
+    }
 }

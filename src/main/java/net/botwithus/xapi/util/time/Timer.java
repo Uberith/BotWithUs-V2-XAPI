@@ -3,7 +3,6 @@ package net.botwithus.xapi.util.time;
 import lombok.Getter;
 import lombok.Setter;
 import net.botwithus.util.Rand;
-import net.botwithus.xapi.util.Math;
 
 public class Timer {
     private final Stopwatch stopWatch = new Stopwatch();

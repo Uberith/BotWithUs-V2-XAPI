@@ -49,6 +49,17 @@ public abstract class PathingEntityQuery<T extends PathingEntity> extends Entity
         return this;
     }
 
+    public PathingEntityQuery<T> name(java.util.regex.Pattern... patterns) {
+        if (patterns.length == 0) {
+            return this;
+        }
+        this.root = this.root.and(t -> {
+            String entityName = t.getName();
+            return entityName != null && Arrays.stream(patterns).anyMatch(p -> p.matcher(entityName).matches());
+        });
+        return this;
+    }
+
     /**
      * Filters pathing entities by overhead text.
      *
@@ -171,11 +182,25 @@ public abstract class PathingEntityQuery<T extends PathingEntity> extends Entity
      * @param options the options to filter by
      * @return the updated PathingEntityQuery
      */
-    public PathingEntityQuery<T> options(String... options) {
+    public PathingEntityQuery<T> option(String... options) {
         if (options.length == 0) {
             return this;
         }
         this.root = this.root.and(t -> Arrays.stream(options).anyMatch(o -> t.getOptions().contains(o)));
+        return this;
+    }
+    
+
+    public PathingEntityQuery<T> option(java.util.regex.Pattern... patterns) {
+        if (patterns.length == 0) {
+            return this;
+        }
+        this.root = this.root.and(t -> {
+            var options = t.getOptions();
+            return options != null && options.stream().anyMatch(opt ->
+                Arrays.stream(patterns).anyMatch(p -> p.matcher(opt).matches())
+            );
+        });
         return this;
     }
 }

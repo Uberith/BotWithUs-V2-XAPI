@@ -4,6 +4,7 @@ module BotWithUs.xapi {
     requires static lombok;
     requires com.google.gson;
     requires java.logging;
+    requires org.slf4j;
 
     exports net.botwithus.xapi.game.inventory;
     exports net.botwithus.xapi.game.traversal.enums;

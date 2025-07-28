@@ -1,5 +1,6 @@
 package net.botwithus.xapi.query;
 
+import net.botwithus.rs3.cache.assets.ConfigManager;
 import net.botwithus.rs3.interfaces.Component;
 import net.botwithus.rs3.interfaces.ComponentType;
 import net.botwithus.rs3.interfaces.InterfaceManager;
@@ -134,6 +135,31 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
     public ComponentQuery itemId(int... itemIds) {
         this.root = this.root.and(t -> Arrays.stream(itemIds).anyMatch(i -> i == t.getItemId()));
         return this;
+    }
+
+    /**
+     * Filters components by item name using a custom string predicate.
+     *
+     * @param name the item name to filter by
+     * @param spred the predicate to match the item name
+     * @return the updated ComponentQuery
+     */
+    public ComponentQuery itemName(String name, BiFunction<String, CharSequence, Boolean> spred) {
+        this.root = this.root.and(t -> {
+            var itemName = ConfigManager.getItemProvider().provide(t.getItemId()).getName();
+            return spred.apply(name, itemName);
+        });
+        return this;
+    }
+
+    /**
+     * Filters components by item name.
+     *
+     * @param name the item name to filter by
+     * @return the updated ComponentQuery
+     */
+    public ComponentQuery itemName(String name) {
+        return itemName(name, String::contentEquals);
     }
 
     /**

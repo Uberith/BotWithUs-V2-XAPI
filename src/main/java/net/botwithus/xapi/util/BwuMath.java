@@ -4,7 +4,7 @@ import net.botwithus.xapi.util.time.Stopwatch;
 
 import java.util.concurrent.TimeUnit;
 
-public class Math {
+public class BwuMath {
     public static int getUnitsPerHour(Stopwatch stopwatch, int unitCount) {
         if (unitCount == 0) {
             return 0;

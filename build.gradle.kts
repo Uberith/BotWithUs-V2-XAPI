@@ -20,6 +20,11 @@ dependencies {
     implementation("net.botwithus.imgui:imgui:1.0.0-SNAPSHOT")
     implementation("org.projectlombok:lombok:1.18.26")
     implementation("com.google.code.gson:gson:2.10.1")
+    
+    // Logging dependencies
+    implementation("org.slf4j:slf4j-api:2.0.9")
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("ch.qos.logback:logback-core:1.4.11")
 }
 
 publishing {

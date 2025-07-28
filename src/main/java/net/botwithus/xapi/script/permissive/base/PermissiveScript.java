@@ -6,6 +6,7 @@ import net.botwithus.xapi.script.base.DelayableScript;
 import net.botwithus.xapi.script.permissive.node.Branch;
 import net.botwithus.xapi.script.permissive.node.TreeNode;
 import net.botwithus.xapi.script.permissive.node.leaf.ChainedActionLeaf;
+import net.botwithus.xapi.util.Logger;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,51 +22,52 @@ public abstract class PermissiveScript extends DelayableScript {
     private final Map<String, State> states = new HashMap<>();
 
     private ChainedActionLeaf activeChainedAction = null;
+    
+    // Logger instance for this script
+    private final Logger logger = Logger.getLogger(this.getClass());
 
     /***
      * Main game tick logic
      */
     @Override
     public void doRun() {
-        println("Processing game tick");
+        logger.debug("Processing game tick");
         runtimeTickCount++;
 
         if (!onPreTick()) {
-            println("Pre-tick failed, skipping main tick logic");
+            logger.warn("Pre-tick failed, skipping main tick logic");
             return;
         }
 
         if (currentState != null) {
-            println("Current state: " + currentState.getName());
+            logger.debug("Current state: " + currentState.getName());
         } else {
-            println("No current state");
+            logger.warn("No current state");
         }
 
         // If we have an active chained action, continue executing it
         if (activeChainedAction != null) {
             try {
-                println("Executing chained action: " + activeChainedAction.getDesc() + "(" + activeChainedAction.getProgress() + ")");
+                logger.debug("Executing chained action: " + activeChainedAction.getDesc() + "(" + activeChainedAction.getProgress() + ")");
                 activeChainedAction.execute();
                 if (activeChainedAction.validate()) {
                     // Chain completed successfully
-                    println("Active chained action completed successfully");
+                    logger.info("Active chained action completed successfully");
                     activeChainedAction = null;
                 } else if (activeChainedAction.hasExpired()) {
                     // Chain failed, reset it
-                    println("Active chained action failed, resetting");
+                    logger.warn("Active chained action failed, resetting");
                     activeChainedAction = null;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                println("Active chained action failed, aborting: " + e.getMessage());
+                logger.error("Active chained action failed, aborting: " + e.getMessage(), e);
                 activeChainedAction = null;
             }
         } else {
             try {
                 traverseAndExecute(getRootNode());
             } catch (Exception e) {
-                e.printStackTrace();
-                println("Root task traversal failed: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace()));
+                logger.error("Root task traversal failed: " + e.getMessage(), e);
             }
         }
     }
@@ -76,7 +78,7 @@ public abstract class PermissiveScript extends DelayableScript {
      */
     private void traverseAndExecute(TreeNode node) {
         if (node == null) {
-            println("Node is null, skipping tree traversal");
+            logger.warn("Node is null, skipping tree traversal");
             return;
         }
 
@@ -84,26 +86,25 @@ public abstract class PermissiveScript extends DelayableScript {
         // Continue traversal if not a leaf node
         if (!node.isLeaf()) {
             if (node.validate()) {
-                println("[Node] \"" + node.getDesc() + "\" SUCCESS -> " + node.successNode().getDesc());
+                logger.debug("[Node] \"" + node.getDesc() + "\" SUCCESS -> " + node.successNode().getDesc());
                 traverseAndExecute(node.successNode());
             } else {
-                println("[Node] \"" + node.getDesc() + "\" NOT_MET -> " + node.failureNode().getDesc());
+                logger.debug("[Node] \"" + node.getDesc() + "\" NOT_MET -> " + node.failureNode().getDesc());
                 traverseAndExecute(node.failureNode());
             }
         } else { // Execute the leaf node
             try {
                 // Check if it's a ChainedActionLeaf that needs to become active
                 if (node instanceof ChainedActionLeaf chainedAction) {
-                    println("Chained action found, setting as active: " + chainedAction.getDesc());
+                    logger.info("Chained action found, setting as active: " + chainedAction.getDesc());
                     activeChainedAction = chainedAction;
                     return;
                 } else {
-                    println("Executing leaf node: " + node.getDesc());
+                    logger.debug("Executing leaf node: " + node.getDesc());
                     node.execute();
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                println("Leaf node failed: " + e.getMessage());
+                logger.error("Leaf node failed: " + e.getMessage(), e);
             }
         }
     }
@@ -120,7 +121,7 @@ public abstract class PermissiveScript extends DelayableScript {
      * Initialize the script with the given states.
      * @param state The states to initialize the script with.
      */
-    public void initStates(State... state){
+    public void initStates(State... state) {
         this.currentState = state[0];
         for (State s : state) {
             states.put(s.getName(), s);
@@ -145,8 +146,16 @@ public abstract class PermissiveScript extends DelayableScript {
 
     public void debug(String message) {
         if (debugMode) {
-            println("[Debug] " + message);
+            logger.debug("[Debug] " + message);
         }
+    }
+    
+    /**
+     * Get the logger instance for this script
+     * @return The logger instance
+     */
+    public Logger getLogger() {
+        return logger;
     }
 
     public boolean isDebugMode() {
@@ -179,24 +188,19 @@ public abstract class PermissiveScript extends DelayableScript {
 
     public boolean setStatus(String status) {
         if (currentState != null) {
-            println("[Status] " + status);
+            logger.info("[Status] " + status);
             currentState.setStatus(status);
             return true;
         }
         return false;
     }
 
-    public static class State {
+    public static abstract class State {
         private String name, status;
         private Branch node;
 
         public State(String name) {
             this.name = name;
-        }
-
-        public State(String name, Branch node) {
-            this.name = name;
-            this.node = node;
         }
 
         public String getName() {
@@ -222,5 +226,7 @@ public abstract class PermissiveScript extends DelayableScript {
         public void setNode(Branch node) {
             this.node = node;
         }
+
+        public abstract void initializeNodes();
     }
 }
