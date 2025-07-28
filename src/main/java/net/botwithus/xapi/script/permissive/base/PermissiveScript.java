@@ -149,6 +149,10 @@ public abstract class PermissiveScript extends DelayableScript {
             logger.debug("[Debug] " + message);
         }
     }
+
+    public void warn(String message) {
+        logger.warn("[Warning] " + message);
+    }
     
     /**
      * Get the logger instance for this script

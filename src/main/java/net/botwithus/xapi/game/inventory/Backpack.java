@@ -5,6 +5,7 @@ import net.botwithus.rs3.inventories.InventoryManager;
 import net.botwithus.rs3.item.InventoryItem;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
@@ -29,6 +30,25 @@ public final class Backpack {
         return backpack.getItems().stream().map(InventoryItem::getId).filter(i -> i != -1).count() == backpack.getDefinition().getCapacity();
     }
 
+    /**
+     * Checks if the backpack is empty.
+     *
+     * @return true if the backpack is empty, false otherwise
+     */
+    public static boolean isEmpty() {
+        Inventory backpack = getInventory();
+        return backpack.getItems().stream().map(InventoryItem::getId).allMatch(id -> id == -1);
+    }
+
+    /**
+     * Retrieves all items in the backpack.
+     *
+     * @return a list of all items in the backpack
+     */
+    public static List<InventoryItem> getItems() {
+        return getInventory().getItems();
+    }
+    
     /**
      * Checks if the backpack contains any items with names matching the given predicate.
      *

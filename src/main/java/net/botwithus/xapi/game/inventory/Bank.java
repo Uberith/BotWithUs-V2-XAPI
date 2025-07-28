@@ -17,7 +17,6 @@ import net.botwithus.xapi.query.NpcQuery;
 import net.botwithus.xapi.query.SceneObjectQuery;
 import net.botwithus.xapi.query.result.ResultSet;
 import net.botwithus.xapi.script.permissive.base.PermissiveScript;
-import net.botwithus.xapi.util.BwuMath;
 import net.botwithus.xapi.util.Logger;
 
 import java.util.Arrays;
@@ -41,7 +40,7 @@ public class Bank {
      *
      * @return {@code true} if the bank was successfully opened, {@code false} otherwise.
      */
-    public static boolean open(PermissiveScript script) {
+    public static boolean open() {
         logger.debug("Attempting to open bank");
         var obj = SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Use")
                 .or(SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Bank"))
@@ -73,7 +72,6 @@ public class Bank {
                     logger.debug("Attempting to interact with bank object using action: " + action.get());
                     var interactionResult = obj.interact(action.get());
                     logger.info("Object interaction completed: " + interactionResult);
-                     script.delayUntil(Bank::isOpen, Rand.nextInt(4, 6));
                     return interactionResult > 0;
                 } else {
                     logger.warn("No valid action found for bank object");
@@ -87,7 +85,6 @@ public class Bank {
             logger.info("Interacting via NPC");
             var interactionResult = npc.interact("Bank");
             logger.info("NPC interaction completed: " + interactionResult);
-             script.delayUntil(Bank::isOpen, Rand.nextInt(4, 6));
             return interactionResult > 0;
         }
         logger.warn("No valid bank object or NPC found");
@@ -379,7 +376,7 @@ public class Bank {
 
     public static boolean depositAllExcept(PermissiveScript script, String... itemNames) {
         var nameSet = new HashSet<>(Arrays.asList(itemNames));
-        var idMap = Backpack.getInventory().getItems().stream().filter(i -> Arrays.stream(itemNames).toList().contains(i)).collect(Collectors.toMap(Item::getId, Item::getName));
+        var idMap = Backpack.getItems().stream().filter(i -> Arrays.stream(itemNames).toList().contains(i)).collect(Collectors.toMap(Item::getId, Item::getName));
         var items = ComponentQuery.newQuery(517).results().stream().filter(
                         i -> !nameSet.contains(idMap.get(i.getItemId())) && (i.getOptions().contains("Deposit-All") || i.getOptions().contains("Deposit-1")))
                 .map(Component::getItemId)
@@ -397,7 +394,7 @@ public class Bank {
     }
 
     public static boolean depositAllExcept(PermissiveScript script, Pattern... patterns) {
-        var idMap = Backpack.getInventory().getItems().stream().filter(i -> i.getName() != null && Arrays.stream(patterns).map(p -> p.matcher(i.getName()).matches()).toList().contains(true))
+        var idMap = Backpack.getItems().stream().filter(i -> i.getName() != null && Arrays.stream(patterns).map(p -> p.matcher(i.getName()).matches()).toList().contains(true))
                 .collect(Collectors.toMap(Item::getId, Item::getName));
         var items = ComponentQuery.newQuery(517).results().stream().filter(
                         i -> !idMap.containsKey(i.getItemId()) && (i.getOptions().contains("Deposit-All") || i.getOptions().contains("Deposit-1")))
@@ -469,7 +466,7 @@ public class Bank {
      * @return The value of the varbit.
      */
     public static int getVarbitValue(int slot, int varbitId) {
-        Inventory inventory = InventoryManager.getInventory(95);
+        Inventory inventory = getInventory();
         if (inventory == null) {
             return Integer.MIN_VALUE;
         }
