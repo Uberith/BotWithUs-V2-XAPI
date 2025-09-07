@@ -40,6 +40,20 @@ dependencies {
 }
 
 publishing {
+    repositories {
+        maven {
+            url = if (project.version.toString().endsWith("SNAPSHOT")) {
+                uri("https://nexus.botwithus.net/repository/maven-snapshots/")
+            } else {
+                uri("https://nexus.botwithus.net/repository/maven-releases/")
+            }
+            credentials {
+                username = System.getenv("MAVEN_REPO_USER")
+                password = System.getenv("MAVEN_REPO_PASS")
+            }
+        }
+    }
+
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
