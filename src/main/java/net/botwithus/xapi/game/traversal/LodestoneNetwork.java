@@ -1,11 +1,12 @@
 package net.botwithus.xapi.game.traversal;
 
 import net.botwithus.rs3.interfaces.InterfaceManager;
+import net.botwithus.rs3.interfaces.Interfaces;
 import net.botwithus.xapi.query.ComponentQuery;
 
 public class LodestoneNetwork {
     public static boolean isOpen() {
-        return InterfaceManager.isOpen(1092);
+        return Interfaces.isOpen(1092);
     }
 
     /**

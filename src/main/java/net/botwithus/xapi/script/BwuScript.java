@@ -2,6 +2,9 @@ package net.botwithus.xapi.script;
 
 import com.google.gson.JsonObject;
 
+import net.botwithus.events.EventInfo;
+import net.botwithus.rs3.entities.LocalPlayer;
+import net.botwithus.rs3.inventories.events.InventoryEvent;
 import net.botwithus.scripts.Info;
 import net.botwithus.ui.workspace.ExtInfo;
 import net.botwithus.ui.workspace.Workspace;
@@ -16,34 +19,16 @@ import net.botwithus.xapi.util.time.Stopwatch;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public abstract class BwuScript extends PermissiveScript {
-
     private BwuGraphicsContext graphicsContext = null;
-    public final Stopwatch STOPWATCH = new Stopwatch();
+    public Stopwatch STOPWATCH;
 
-    private final Info info = getClass().getAnnotation(Info.class);
+    public LocalPlayer player;
     public BotStat botStatInfo = new BotStat();
-
-    // Map for states, with a name key for each state
-    private final Map<String, State> states = new HashMap<>();
-    private State currentState;
-
-    public BwuScript(State... state) {
-        this.currentState = state[0];
-
-        for (State s : state) {
-            states.put(s.getName(), s);
-        }
-    }
-
-    @Override
-    public Branch getRootNode() {
-        return currentState != null ? currentState.getNode() : null;
-    }
 
     @Override
     public void onDraw(Workspace workspace) {
+        super.onDraw(workspace);
         if (graphicsContext == null) {
             graphicsContext = new BwuGraphicsContext(this, workspace);
         }
@@ -53,46 +38,14 @@ public abstract class BwuScript extends PermissiveScript {
 
     public abstract void onDrawConfig(Workspace workspace);
 
-    
-
     @Override
     public void onInitialize() {
+        super.onInitialize();
         try {
             performLoadPersistentData();
         } catch (Exception e) {
             println("Failed to load persistent data");
         }
-    }
-
-    public Info getInfo() {
-        return info;
-    }
-
-    public State getCurrentState() {
-        return currentState;
-    }
-
-    // Methods for managing states
-    public void addState(State... state) {
-        for (State s : state) {
-            states.put(s.getName(), s);
-        }
-    }
-
-    public void setCurrentState(String name) {
-        currentState = states.get(name);
-    }
-
-    public String getStatus() {
-        return currentState != null ? currentState.getStatus() : null;
-    }
-
-    public boolean setStatus(String status) {
-        if (currentState != null) {
-            currentState.setStatus(status);
-            return true;
-        }
-        return false;
     }
 
     public void performSavePersistentData() {
@@ -123,5 +76,43 @@ public abstract class BwuScript extends PermissiveScript {
     public abstract BuildableUI getBuildableUI();
     public abstract void savePersistentData(JsonObject obj);
     public abstract void loadPersistentData(JsonObject obj);
-    public abstract String getVersion();
+
+    @Override
+    public boolean onPreTick() {
+        player = LocalPlayer.self();
+        return super.onPreTick() && player != null && player.isValid();
+    }
+
+    @Override
+    public void onActivation() {
+        super.onActivation();
+        if (STOPWATCH == null) {
+            STOPWATCH = Stopwatch.startNew();
+        } else {
+            STOPWATCH.resume();
+        }
+    }
+
+    @Override
+    public void onDeactivation() {
+        super.onDeactivation();
+        STOPWATCH.pause();
+    }
+
+    @EventInfo(type = InventoryEvent.class)
+    private void onInventoryEvent(InventoryEvent event) {
+
+        // New Item Acquired
+        if (event.oldItem().getId() <= -1 && event.newItem().getId() > -1) {
+            onItemAcquired(event);
+        } else if (event.oldItem().getId() > -1 && event.newItem().getId() <= -1) {
+            onItemRemoved(event);
+        } else {
+            onItemChange(event);
+        }
+    }
+
+    protected void onItemAcquired(InventoryEvent event) {};
+    protected void onItemRemoved(InventoryEvent event) {};
+    protected void onItemChange(InventoryEvent event) {};
 }

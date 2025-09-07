@@ -5,12 +5,16 @@ import net.botwithus.rs3.entities.SceneObject;
 import net.botwithus.rs3.world.World;
 import net.botwithus.xapi.query.base.EntityQuery;
 import net.botwithus.xapi.query.result.EntityResultSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.BiFunction;
 
 public class SceneObjectQuery extends EntityQuery<SceneObject> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SceneObjectQuery.class);
 
     /**
      * Creates a new SceneObjectQuery instance.
@@ -154,7 +158,7 @@ public class SceneObjectQuery extends EntityQuery<SceneObject> {
         }
         this.root = this.root.and(t -> {
             var objOptions = t.getOptions();
-            return objOptions != null && Arrays.stream(options).anyMatch(i -> objOptions.stream().anyMatch(j -> spred.apply(i, j)));
+            return objOptions != null && Arrays.stream(options).anyMatch(i -> i != null && objOptions.stream().anyMatch(j -> j != null && spred.apply(i, j)));
         });
         return this;
     }
@@ -187,4 +191,5 @@ public class SceneObjectQuery extends EntityQuery<SceneObject> {
         });
         return this;
     }
+
 }

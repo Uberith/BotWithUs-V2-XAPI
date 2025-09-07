@@ -2,7 +2,7 @@ package net.botwithus.xapi.query.base;
 
 import net.botwithus.rs3.entities.Entity;
 import net.botwithus.rs3.entities.EntityType;
-import net.botwithus.rs3.world.Direction;
+import net.botwithus.rs3.world.Vector3f;
 import net.botwithus.rs3.world.Area;
 import net.botwithus.rs3.world.Coordinate;
 import net.botwithus.rs3.world.Distance;
@@ -18,6 +18,7 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
     /**
      * Constructs a new EntityQuery with a default predicate.
      */
+    @SuppressWarnings("unused")
     public EntityQuery() {
         root = t -> true;
     }
@@ -28,9 +29,10 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
      * @param entityType the entity types to filter by
      * @return the updated EntityQuery
      */
-    public EntityQuery<T> type(EntityType... entityType) {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q type(EntityType... entityType) {
         this.root = this.root.and(t -> Arrays.stream(entityType).anyMatch(i -> t.getType() == i));
-        return this;
+        return (Q) this;
     }
 
     /**
@@ -39,20 +41,22 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
      * @param coordinate the coordinates to filter by
      * @return the updated EntityQuery
      */
-    public EntityQuery<T> coordinate(Coordinate... coordinate) {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q coordinate(Coordinate... coordinate) {
         this.root = this.root.and(t -> Arrays.stream(coordinate).anyMatch(i -> t.getCoordinate().equals(i)));
-        return this;
+        return (Q) this;
     }
 
     /**
      * Filters entities by direction.
      *
-     * @param direction the directions to filter by
+     * @param vector3f the directions to filter by
      * @return the updated EntityQuery
      */
-    public EntityQuery<T> direction(Direction... direction) {
-        this.root = this.root.and(t -> Arrays.stream(direction).anyMatch(i -> t.getDirection().equals(i)));
-        return this;
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q direction(Vector3f... vector3f) {
+        this.root = this.root.and(t -> Arrays.stream(vector3f).anyMatch(i -> t.getDirection().equals(i)));
+        return (Q) this;
     }
 
     /**
@@ -61,9 +65,10 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
      * @param valid the valid status to filter by
      * @return the updated EntityQuery
      */
-    public EntityQuery<T> valid(boolean valid) {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q valid(boolean valid) {
         this.root = this.root.and(t -> t.isValid() == valid);
-        return this;
+        return (Q) this;
     }
 
     /**
@@ -72,9 +77,10 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
      * @param area the area to check
      * @return the updated EntityQuery
      */
-    public EntityQuery<T> inside(Area area) {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q inside(Area area) {
         this.root = this.root.and(t -> area.contains(t.getCoordinate()));
-        return this;
+        return (Q) this;
     }
 
     /**
@@ -83,14 +89,16 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
      * @param area the area to check
      * @return the updated EntityQuery
      */
-    public EntityQuery<T> outside(Area area) {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q outside(Area area) {
         this.root = this.root.and(t -> !area.contains(t.getCoordinate()));
-        return this;
+        return (Q) this;
     }
 
-    public EntityQuery<T> distance(double distance) {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q distance(double distance) {
         this.root = this.root.and(t -> Distance.to(t) <= distance);
-        return this;
+        return (Q) this;
     }
 
     /**
@@ -99,9 +107,10 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
      * @param other another EntityQuery to AND with
      * @return the updated EntityQuery
      */
-    public EntityQuery<T> and(EntityQuery<T> other) {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q and(EntityQuery<T> other) {
         this.root = this.root.and(other.root);
-        return this;
+        return (Q) this;
     }
 
     /**
@@ -110,9 +119,10 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
      * @param other another EntityQuery to OR with
      * @return the updated EntityQuery
      */
-    public EntityQuery<T> or(EntityQuery<T> other) {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q or(EntityQuery<T> other) {
         this.root = this.root.or(other.root);
-        return this;
+        return (Q) this;
     }
 
     /**
@@ -120,8 +130,20 @@ public abstract class EntityQuery<T extends Entity> implements Query<T, EntityRe
      *
      * @return the updated EntityQuery with negated predicate
      */
-    public EntityQuery<T> negate() {
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q inverse() {
         this.root = this.root.negate();
-        return this;
+        return (Q) this;
+    }
+
+    /**
+     * Marks the current EntityQuery and returns it.
+     * This method uses a generic return type to maintain the specific subtype.
+     *
+     * @return the current EntityQuery instance
+     */
+    @SuppressWarnings("unchecked")
+    public <Q extends EntityQuery<T>> Q mark() {
+        return (Q) this;
     }
 }

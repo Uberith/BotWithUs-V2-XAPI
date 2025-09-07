@@ -4,8 +4,22 @@ plugins {
     `maven-publish`
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(24))
+    }
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Automatic-Module-Name" to "xapi"
+        )
+    }
+}
+
 group = "net.botwithus.xapi"
-version = "1.0.0-SNAPSHOT"
+version = "2.0.0-SNAPSHOT"
 
 repositories {
     mavenLocal()
@@ -16,21 +30,29 @@ repositories {
 }
 
 dependencies {
-    implementation("net.botwithus.api:api:1.0.0-SNAPSHOT")
-    implementation("net.botwithus.imgui:imgui:1.0.0-SNAPSHOT")
+    implementation("net.botwithus.api:api:1.+")
+    implementation("net.botwithus.imgui:imgui:1.+")
     implementation("org.projectlombok:lombok:1.18.26")
     implementation("com.google.code.gson:gson:2.10.1")
-    
+
     // Logging dependencies
     implementation("org.slf4j:slf4j-api:2.0.9")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
-    implementation("ch.qos.logback:logback-core:1.4.11")
 }
 
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
+            
+            pom {
+                name.set("BotWithUs XAPI")
+                description.set("Extended API framework for BotWithUs RuneScape 3 bot development")
+                
+                properties.set(mapOf(
+                    "maven.compiler.source" to "24",
+                    "maven.compiler.target" to "24"
+                ))
+            }
         }
     }
 }

@@ -1,22 +1,26 @@
 package net.botwithus.xapi.script.permissive.base;
 
+import java.util.Arrays;
 import java.util.Map;
 
+import net.botwithus.scripts.Info;
+import net.botwithus.ui.workspace.Workspace;
 import net.botwithus.xapi.script.base.DelayableScript;
 import net.botwithus.xapi.script.permissive.node.Branch;
 import net.botwithus.xapi.script.permissive.node.TreeNode;
 import net.botwithus.xapi.script.permissive.node.leaf.ChainedActionLeaf;
-import net.botwithus.xapi.util.Logger;
+import net.botwithus.xapi.script.ui.BwuGraphicsContext;
+import net.botwithus.xapi.script.ui.interfaces.BuildableUI;
+import net.botwithus.xapi.util.time.Stopwatch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 
 
 public abstract class PermissiveScript extends DelayableScript {
     private boolean debugMode = false;
     private State currentState;
-    private long runtimeTickCount = 0;
 
     // Map for states, with a name key for each state
     private final Map<String, State> states = new HashMap<>();
@@ -24,7 +28,7 @@ public abstract class PermissiveScript extends DelayableScript {
     private ChainedActionLeaf activeChainedAction = null;
     
     // Logger instance for this script
-    private final Logger logger = Logger.getLogger(this.getClass());
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /***
      * Main game tick logic
@@ -32,7 +36,6 @@ public abstract class PermissiveScript extends DelayableScript {
     @Override
     public void doRun() {
         logger.debug("Processing game tick");
-        runtimeTickCount++;
 
         if (!onPreTick()) {
             logger.warn("Pre-tick failed, skipping main tick logic");
@@ -86,10 +89,10 @@ public abstract class PermissiveScript extends DelayableScript {
         // Continue traversal if not a leaf node
         if (!node.isLeaf()) {
             if (node.validate()) {
-                logger.debug("[Node] \"" + node.getDesc() + "\" SUCCESS -> " + node.successNode().getDesc());
+                logger.info("[Node] \"" + node.getDesc() + "\" SUCCESS -> " + node.successNode().getDesc());
                 traverseAndExecute(node.successNode());
             } else {
-                logger.debug("[Node] \"" + node.getDesc() + "\" NOT_MET -> " + node.failureNode().getDesc());
+                logger.info("[Node] \"" + node.getDesc() + "\" NOT_MET -> " + node.failureNode().getDesc());
                 traverseAndExecute(node.failureNode());
             }
         } else { // Execute the leaf node
@@ -100,7 +103,7 @@ public abstract class PermissiveScript extends DelayableScript {
                     activeChainedAction = chainedAction;
                     return;
                 } else {
-                    logger.debug("Executing leaf node: " + node.getDesc());
+                    logger.info("Executing leaf node: " + node.getDesc());
                     node.execute();
                 }
             } catch (Exception e) {
@@ -111,10 +114,6 @@ public abstract class PermissiveScript extends DelayableScript {
 
     public Branch getRootNode() {
         return currentState != null ? currentState.getNode() : null;
-    }
-
-    public long getRuntimeTickCount() {
-        return runtimeTickCount;
     }
 
     /**
@@ -144,14 +143,35 @@ public abstract class PermissiveScript extends DelayableScript {
         return true;
     }
 
+    public Info getInfo() {
+        return getClass().getAnnotation(Info.class);
+    }
+
     public void debug(String message) {
         if (debugMode) {
             logger.debug("[Debug] " + message);
+            println("[Debug] " + message);
         }
     }
 
     public void warn(String message) {
         logger.warn("[Warning] " + message);
+        println("[Warning] " + message);
+    }
+
+    public void info(String message) {
+        logger.info("[Info] " + message);
+        println("[Info] " + message);
+    }
+
+    public void error(Exception e, String message) {
+        if (e != null) {
+            logger.error("[Error] " + message + "\n" + Arrays.toString(e.getStackTrace()));
+            println("[Error] " + message + "\n" + Arrays.toString(e.getStackTrace()));
+        } else {
+            logger.error("[Error] " + message);
+            println("[Error] " + message);
+        }
     }
     
     /**
@@ -203,7 +223,7 @@ public abstract class PermissiveScript extends DelayableScript {
         private String name, status;
         private Branch node;
 
-        public State(String name) {
+        protected State(String name) {
             this.name = name;
         }
 

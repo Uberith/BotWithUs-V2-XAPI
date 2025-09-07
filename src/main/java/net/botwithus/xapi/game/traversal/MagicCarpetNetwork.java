@@ -1,6 +1,7 @@
 package net.botwithus.xapi.game.traversal;
 
 import net.botwithus.rs3.interfaces.InterfaceManager;
+import net.botwithus.rs3.interfaces.Interfaces;
 import net.botwithus.xapi.query.NpcQuery;
 
 public class MagicCarpetNetwork {
@@ -10,7 +11,7 @@ public class MagicCarpetNetwork {
      * @return true if the interface is open, false otherwise.
      */
     public static boolean isOpen() {
-        return InterfaceManager.isOpen(1928);
+        return Interfaces.isOpen(1928);
     }
 
     /**

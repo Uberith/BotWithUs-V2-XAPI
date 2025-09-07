@@ -23,19 +23,19 @@ public class BwuGraphicsContext {
     public void draw() {
 
         if (ImGui.begin(script.getInfo().name() + " Settings | " + script.getInfo().version(), 0)) {
-            ImGui.pushStyleColor(5, 0.322f, 0.494f,0.675f, 0.400f);
-            ImGui.pushStyleColor(7, 0.322f, 0.494f,0.675f, 0.200f);
-            ImGui.pushStyleColor(18, 0.322f, 0.494f,0.720f, 0.800f);
-            ImGui.pushStyleColor(21, 0.322f, 0.494f,0.675f, 0.400f);
+//            ImGui.pushStyleColor(5, 0.322f, 0.494f,0.675f, 0.400f);
+//            ImGui.pushStyleColor(7, 0.322f, 0.494f,0.675f, 0.200f);
+//            ImGui.pushStyleColor(18, 0.322f, 0.494f,0.720f, 0.800f);
+//            ImGui.pushStyleColor(21, 0.322f, 0.494f,0.675f, 0.400f);
 
             if (ImGui.beginTabBar("Bot", 0)) {
-                script.onDrawConfig(workspace);
+                if (ImGui.beginTabItem("Config", 0)) {
+                    script.onDrawConfig(workspace);
+                    ImGui.endTabItem();
+                }
                 if (ImGui.beginTabItem("Stats", 0)) {
-                    ImGui.text(script.getInfo().name() + " " + script.getInfo().version());
-                    ImGui.separator();
-
                     if (script.botStatInfo != null) {
-                        if (script.botStatInfo.xpInfoMap != null) {
+                        if (script.botStatInfo.xpInfoMap != null && !script.botStatInfo.xpInfoMap.isEmpty()) {
                             for (var key : script.botStatInfo.xpInfoMap.keySet()) {
                                 XPInfo model = script.botStatInfo.xpInfoMap.get(key);
                                 var pairs = model.getPairList(script.STOPWATCH);
@@ -47,23 +47,22 @@ public class BwuGraphicsContext {
                             }
                             ImGui.separator();
                         }
-                        if (script.botStatInfo.displayInfoMap != null) {
+                        if (script.botStatInfo.displayInfoMap != null && !script.botStatInfo.displayInfoMap.isEmpty()) {
                             for (String key : script.botStatInfo.displayInfoMap.keySet()) {
                                 ImGui.text(key + script.botStatInfo.displayInfoMap.get(key));
                             }
+                            ImGui.separator();
                         }
-                        ImGui.separator();
 
                         ImGui.text("Runtime: " + Timer.secondsToFormattedString(script.STOPWATCH.elapsed() / 1000, DurationStringFormat.CLOCK));
                         ImGui.text("Current Task: " + script.getCurrentState().getStatus());
                     }
                     ImGui.endTabItem();
                 }
-
             }
             ImGui.endTabBar();
 
-            ImGui.popStyleColor(4);
+//            ImGui.popStyleColor(4);
         }
         ImGui.end();
     }

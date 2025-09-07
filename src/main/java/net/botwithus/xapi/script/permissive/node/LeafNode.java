@@ -1,6 +1,7 @@
 package net.botwithus.xapi.script.permissive.node;
 
 import net.botwithus.scripts.Script;
+import net.botwithus.xapi.script.permissive.base.PermissiveScript;
 
 import java.util.concurrent.Callable;
 
@@ -9,44 +10,44 @@ public class LeafNode extends TreeNode {
     private Runnable runnable = null;
     private boolean validate = false;
 
-    public LeafNode(Script script) {
+    public LeafNode(PermissiveScript script) {
         super(script);
     }
 
-    public LeafNode(Script script, String desc) {
+    public LeafNode(PermissiveScript script, String desc) {
         super(script, desc);
     }
 
-    public LeafNode(Script script, String desc, String definedIn) {
+    public LeafNode(PermissiveScript script, String desc, String definedIn) {
         super(script, desc, definedIn);
     }
 
-    public LeafNode(Script script, Callable<Boolean> execute) {
+    public LeafNode(PermissiveScript script, Callable<Boolean> execute) {
         super(script);
         this.execute = execute;
     }
 
-    public LeafNode(Script script, String desc, Callable<Boolean> execute) {
+    public LeafNode(PermissiveScript script, String desc, Callable<Boolean> execute) {
         super(script, desc);
         this.execute = execute;
     }
 
-    public LeafNode(Script script, String desc, String definedIn, Callable<Boolean> execute) {
+    public LeafNode(PermissiveScript script, String desc, String definedIn, Callable<Boolean> execute) {
         super(script, desc, definedIn);
         this.execute = execute;
     }
 
-    public LeafNode(Script script, Runnable runnable) {
+    public LeafNode(PermissiveScript script, Runnable runnable) {
         super(script);
         this.runnable = runnable;
     }
 
-    public LeafNode(Script script, String desc, Runnable runnable) {
+    public LeafNode(PermissiveScript script, String desc, Runnable runnable) {
         super(script, desc);
         this.runnable = runnable;
     }
 
-    public LeafNode(Script script, String desc, String definedIn, Runnable runnable) {
+    public LeafNode(PermissiveScript script, String desc, String definedIn, Runnable runnable) {
         super(script, desc, definedIn);
         this.runnable = runnable;
     }
@@ -72,6 +73,7 @@ public class LeafNode extends TreeNode {
 
     @Override
     public boolean validate() {
+        script.info("    [Leaf] " + getDesc() + ": " + validate);
         return validate;
     }
 

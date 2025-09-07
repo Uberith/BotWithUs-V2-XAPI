@@ -46,7 +46,7 @@ public final class Backpack {
      * @return a list of all items in the backpack
      */
     public static List<InventoryItem> getItems() {
-        return getInventory().getItems();
+        return getInventory().getItems().stream().filter(i -> !i.getName().isEmpty()).toList();
     }
     
     /**

@@ -2,8 +2,10 @@ package net.botwithus.xapi.query.base;
 
 import net.botwithus.rs3.entities.EntityType;
 import net.botwithus.rs3.entities.PathingEntity;
+import net.botwithus.xapi.query.ComponentQuery;
 
 import java.util.Arrays;
+import java.util.function.BiFunction;
 
 public abstract class PathingEntityQuery<T extends PathingEntity> extends EntityQuery<T> {
 
@@ -177,17 +179,28 @@ public abstract class PathingEntityQuery<T extends PathingEntity> extends Entity
     }
 
     /**
-     * Filters pathing entities by options.
+     * Filters PathingEntities by options.
      *
-     * @param options the options to filter by
+     * @param spred the predicate to match options
+     * @param option the options to filter by
      * @return the updated PathingEntityQuery
      */
-    public PathingEntityQuery<T> option(String... options) {
-        if (options.length == 0) {
-            return this;
-        }
-        this.root = this.root.and(t -> Arrays.stream(options).anyMatch(o -> t.getOptions().contains(o)));
+    public PathingEntityQuery<T> option(BiFunction<String, CharSequence, Boolean> spred, String... option) {
+        this.root = this.root.and(t -> {
+            var options = t.getOptions();
+            return options != null && Arrays.stream(option).anyMatch(i -> i != null && options.stream().anyMatch(j -> j != null && spred.apply(i, j)));
+        });
         return this;
+    }
+
+    /**
+     * Filters PathingEntities by options using content equality.
+     *
+     * @param option the options to filter by
+     * @return the updated PathingEntityQuery
+     */
+    public PathingEntityQuery<T> option(String... option) {
+        return option(String::contentEquals, option);
     }
     
 

@@ -1,7 +1,7 @@
 package net.botwithus.xapi.game.inventory;
 
 import net.botwithus.rs3.interfaces.Component;
-import net.botwithus.rs3.interfaces.InterfaceManager;
+import net.botwithus.rs3.interfaces.Interfaces;
 import net.botwithus.rs3.inventories.Inventory;
 import net.botwithus.rs3.inventories.InventoryManager;
 import net.botwithus.rs3.item.InventoryItem;
@@ -17,7 +17,8 @@ import net.botwithus.xapi.query.NpcQuery;
 import net.botwithus.xapi.query.SceneObjectQuery;
 import net.botwithus.xapi.query.result.ResultSet;
 import net.botwithus.xapi.script.permissive.base.PermissiveScript;
-import net.botwithus.xapi.util.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -26,11 +27,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Bank {
-    private static final Logger logger = Logger.getLogger(Bank.class);
     private static final int PRESET_BROWSING_VARBIT_ID = 49662, SELECTED_OPTIONS_TAB_VARBIT_ID = 45191, WITHDRAW_TYPE_VARBIT_ID = 45189, WITHDRAW_X_VARP_ID = 111;
     private static final Pattern BANK_NAME_PATTERN = Pattern.compile("^(?!.*deposit).*(bank|counter).*$", Pattern.CASE_INSENSITIVE);
     private static final String LAST_PRESET_OPTION = "Load Last Preset from";
     private static final int INVENTORY_ID = 95, INTERFACE_INDEX = 517, COMPONENT_INDEX = 202;
+    private static final Logger logger = LoggerFactory.getLogger(Bank.class);
 
 
     private static int previousLoadedPreset = -1;
@@ -40,63 +41,70 @@ public class Bank {
      *
      * @return {@code true} if the bank was successfully opened, {@code false} otherwise.
      */
-    public static boolean open() {
-        logger.debug("Attempting to open bank");
-        var obj = SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Use")
-                .or(SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Bank"))
-                .or(SceneObjectQuery.newQuery().name("Shantay chest")).results().nearest();
-        var npc = NpcQuery.newQuery().option("Bank").results().nearest();
-        logger.info("Bank opening initiated");
-        var useObj = true;
+    public static boolean open(PermissiveScript script) {
+        try {
+            logger.info("Attempting find bank obj");
+            var obj = SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Use")
+                    .or(SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Bank"))
+                    .or(SceneObjectQuery.newQuery().name("Shantay chest")).results().nearest();
 
-        logger.debug("Object is " + (obj != null ? "not null" : "null"));
-        logger.debug("Npc is " + (npc != null ? "not null" : "null"));
+            logger.info("Attempting find bank npc");
+            var npc = NpcQuery.newQuery().option("Bank").results().nearest();
+            logger.info("Bank opening initiated");
+            var useObj = true;
 
-        if (obj != null && npc != null) {
-            logger.debug("Distance.to(obj): " + Distance.to(obj));
-            logger.debug("Distance.to(npc): " + Distance.to(npc));
-            var objDist = Distance.to(obj);
-            var npcDist = Distance.to(npc);
-            if (!Double.isNaN(objDist) && !Double.isNaN(npcDist))
-                useObj = Distance.to(obj) < Distance.to(npc);
-            logger.debug("useObj: " + useObj);
-        }
-        if (obj != null && useObj) {
-            logger.info("Interacting via Object: " + obj.getName());
-            var actions = obj.getOptions();
-            logger.debug("Available Options: " + actions);
-            if (!actions.isEmpty()) {
-                var action = actions.stream().filter(i -> i != null && !i.isEmpty()).findFirst();
-                logger.debug("action.isPresent(): " + action.isPresent());
-                if (action.isPresent()) {
-                    logger.debug("Attempting to interact with bank object using action: " + action.get());
-                    var interactionResult = obj.interact(action.get());
-                    logger.info("Object interaction completed: " + interactionResult);
-                    return interactionResult > 0;
+            logger.info("Object is " + (obj != null ? "not null" : "null"));
+            logger.info("Npc is " + (npc != null ? "not null" : "null"));
+
+            if (obj != null && npc != null) {
+                logger.info("Distance.to(obj): " + Distance.to(obj));
+                logger.info("Distance.to(npc): " + Distance.to(npc));
+                var objDist = Distance.to(obj);
+                var npcDist = Distance.to(npc);
+                if (!Double.isNaN(objDist) && !Double.isNaN(npcDist))
+                    useObj = Distance.to(obj) < Distance.to(npc);
+                logger.info("useObj: " + useObj);
+            }
+            if (obj != null && useObj) {
+                script.info("Interacting via Object: " + obj.getName());
+                var actions = obj.getOptions();
+                logger.info("Available Options: " + actions);
+                if (!actions.isEmpty()) {
+                    var action = actions.stream().filter(i -> i != null && !i.isEmpty()).findFirst();
+                    logger.info("action.isPresent(): " + action.isPresent());
+                    if (action.isPresent()) {
+                        logger.info("Attempting to interact with bank object using action: " + action.get());
+                        var interactionResult = obj.interact(action.get());
+                        script.info("Object interaction completed: " + interactionResult);
+                        return interactionResult > 0;
+                    } else {
+                        script.warn("No valid action found for bank object");
+                        return false;
+                    }
                 } else {
-                    logger.warn("No valid action found for bank object");
+                    script.warn("No options available on bank object");
                     return false;
                 }
-            } else {
-                logger.warn("No options available on bank object");
-                return false;
+            } else if (npc != null) {
+                script.info("Interacting via NPC");
+                var interactionResult = npc.interact("Bank");
+                script.info("NPC interaction completed: " + interactionResult);
+                return interactionResult > 0;
             }
-        } else if (npc != null) {
-            logger.info("Interacting via NPC");
-            var interactionResult = npc.interact("Bank");
-            logger.info("NPC interaction completed: " + interactionResult);
-            return interactionResult > 0;
+            script.warn("No valid bank object or NPC found");
+            return false;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return false;
         }
-        logger.warn("No valid bank object or NPC found");
-        return false;
     }
-    
+
     /**
      * Checks if the bank interface is currently open
      * @return true if bank is open, false otherwise
      */
     public static boolean isOpen() {
-        return InterfaceManager.isOpen(INTERFACE_INDEX);
+        return Interfaces.isOpen(INTERFACE_INDEX);
     }
 
     /**
@@ -123,23 +131,23 @@ public class Bank {
         var npc = NpcQuery.newQuery().option(LAST_PRESET_OPTION).results().nearest();
         var useObj = true;
 
-        logger.debug("Object is " + (obj != null ? "not null" : "null"));
-        logger.debug("Npc is " + (npc != null ? "not null" : "null"));
+//        logger.debug("Object is " + (obj != null ? "not null" : "null"));
+//        logger.debug("Npc is " + (npc != null ? "not null" : "null"));
 
         if (obj != null && npc != null) {
-            logger.debug("Distance.to(obj): " + Distance.to(obj));
-            logger.debug("Distance.to(npc): " + Distance.to(npc));
+//            logger.debug("Distance.to(obj): " + Distance.to(obj));
+//            logger.debug("Distance.to(npc): " + Distance.to(npc));
             var objDist = Distance.to(obj);
             var npcDist = Distance.to(npc);
             if (!Double.isNaN(objDist) && !Double.isNaN(npcDist))
                 useObj = Distance.to(obj) < Distance.to(npc);
-            logger.debug("useObj: " + useObj);
+//            logger.debug("useObj: " + useObj);
         }
         if (obj != null && useObj) {
-            logger.debug("Interacting via Object: " + obj.getName());
+//            logger.debug("Interacting via Object: " + obj.getName());
             return obj.interact(LAST_PRESET_OPTION) > 0;
         } else if (npc != null) {
-            logger.debug("Interacting via Npc: " + npc.getName());
+//            logger.debug("Interacting via Npc: " + npc.getName());
             return npc.interact(LAST_PRESET_OPTION) > 0;
         }
         return false;
@@ -187,9 +195,9 @@ public class Bank {
         ResultSet<InventoryItem> results = InventoryItemQuery.newQuery(INVENTORY_ID).slot(slot).results();
         var item = results.first();
         if (item != null) {
-            logger.debug("[Inventory#interact(slot, option)]: " + item.getId());
+            logger.info("[Inventory#interact(slot, option)]: " + item.getId());
             ResultSet<Component> queryResults = ComponentQuery.newQuery(INTERFACE_INDEX).id(COMPONENT_INDEX).itemId(item.getId()).results();
-            logger.debug("[Inventory#interact(slot, option)]: QueryResults: " + queryResults.size());
+            logger.info("[Inventory#interact(slot, option)]: QueryResults: " + queryResults.size());
             var result = queryResults.first();
             return result != null && result.interact(option) > 0;
         }
@@ -232,9 +240,9 @@ public class Bank {
         setTransferOption(TransferOptionType.ALL);
         var item = query.results().first();
         if (item != null) {
-            logger.debug("Item: " + item.getName());
+            logger.info("Item: " + item.getName());
         } else {
-            logger.debug("Item is null");
+            logger.info("Item is null");
         }
         return item != null && interact(item.getSlot(), option);
     }

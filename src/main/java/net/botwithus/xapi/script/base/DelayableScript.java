@@ -1,38 +1,51 @@
 package net.botwithus.xapi.script.base;
 
+import net.botwithus.rs3.client.Client;
 import net.botwithus.scripts.Script;
 import net.botwithus.util.Rand;
 
+import java.util.Arrays;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 
 public abstract class DelayableScript extends Script {
 
     private Callable<Boolean> delayUntil = null,
             delayWhile = null;
-    private int delay = -1;
+    private int ticksToDelay = -1, previousTick, currentTick;
 
     @Override
     public void run() {
         try {
+            currentTick = Client.getServerTick();
+            if (currentTick <= previousTick) {
+                return;
+            }
+
             if (delayUntil != null) {
-                if (delayUntil.call() || delay <= 0) {
+                if (delayUntil.call() || ticksToDelay <= 0) {
                     delayUntil = null;
+                    ticksToDelay = 0;
                 } else {
-                    delay--;
+                    ticksToDelay--;
                 }
             } else if (delayWhile != null) {
-                if (!delayWhile.call() || delay <= 0) {
+                if (!delayWhile.call() || ticksToDelay <= 0) {
                     delayWhile = null;
+                    ticksToDelay = 0;
                 } else {
-                    delay--;
+                    ticksToDelay--;
                 }
-            } else if (delay > 0) {
-                delay--;
+            }
+
+            if (ticksToDelay > 0) {
+                ticksToDelay--;
             } else {
                 doRun();
             }
+
+            previousTick = currentTick;
         } catch (Exception e) {
+            println("Exception: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace()));
             e.printStackTrace();
         }
     }
@@ -41,16 +54,16 @@ public abstract class DelayableScript extends Script {
 
     public void delayUntil(Callable<Boolean> condition, int timeoutTicks) {
         delayUntil = condition;
-        delay = timeoutTicks;
+        ticksToDelay = timeoutTicks;
     }
     public void delayWhile(Callable<Boolean> condition, int timeoutTicks) {
         delayWhile = condition;
-        delay = timeoutTicks;
+        ticksToDelay = timeoutTicks;
     }
     public void delay(int ticks) {
-        delay = ticks;
+        ticksToDelay = ticks;
     }
     public void delay(int min, int max) {
-        delay = Rand.nextInt(min, max);
+        ticksToDelay = Rand.nextInt(min, max);
     }
 }

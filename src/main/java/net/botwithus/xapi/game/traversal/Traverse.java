@@ -6,9 +6,11 @@ import net.botwithus.rs3.minimenu.MiniMenu;
 import net.botwithus.rs3.world.Coordinate;
 import net.botwithus.rs3.world.Distance;
 import net.botwithus.util.Rand;
-import net.botwithus.xapi.util.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Traverse {
+    private final static Logger logger = LoggerFactory.getLogger(Traverse.class);
 
     private static final int MAX_LOCAL_DISTANCE = 80;
     private static final int MAX_STEP_SIZE = 16;
@@ -23,7 +25,7 @@ public class Traverse {
      */
     public static boolean to(Coordinate destinationCoord) {
         if (destinationCoord == null) {
-            Logger.logWarn("ERROR: Coordinate is null");
+            logger.warn("ERROR: Coordinate is null");
             return false;
         }
         var distance = Distance.to(destinationCoord);
@@ -42,13 +44,13 @@ public class Traverse {
     public static boolean bresenhamTo(Coordinate destinationCoord, boolean minimap, int stepSize) {
         LocalPlayer player = LocalPlayer.self();
         if (player == null) {
-            Logger.logWarn("[Traverse#bresenham] Player is null");
+            logger.warn("[Traverse#bresenham] Player is null");
             return false;
         }
 
         Coordinate currentCoordinate = player.getCoordinate();
         if (currentCoordinate == null) {
-            Logger.logWarn("[Traverse#bresenham] Current coordinate is null");
+            logger.warn("[Traverse#bresenham] Current coordinate is null");
             return false;
         }
 
@@ -73,34 +75,34 @@ public class Traverse {
      */
     public static boolean walkTo(Coordinate destinationCoord, boolean minimap) {
         if (destinationCoord == null) {
-            Logger.logWarn("ERROR: Coordinate is null");
+            logger.warn("ERROR: Coordinate is null");
             return false;
         }
 
         try {
-            Logger.logInfo("Attempting to walk to " + destinationCoord.x() + ", " + destinationCoord.y());
+            logger.info("Attempting to walk to " + destinationCoord.x() + ", " + destinationCoord.y());
 
             if (Distance.to(destinationCoord) < 2) {
-                Logger.logInfo("Already close to target location, skipping walk");
+                logger.info("Already close to target location, skipping walk");
                 return true;
             }
 
             if (Distance.to(destinationCoord) > MAX_LOCAL_DISTANCE) {
-                Logger.logInfo("Target location is too far away, using Bresenham pathfinding");
+                logger.info("Target location is too far away, using Bresenham pathfinding");
                 return bresenhamTo(destinationCoord, minimap, Rand.nextInt(MIN_STEP_SIZE, MAX_STEP_SIZE));
             }
 
             int result = MiniMenu.doAction(Action.WALK, minimap ? 1 : 0, destinationCoord.x(), destinationCoord.y());
 
             if (result > 0) {
-                Logger.logInfo("Successfully initiated walk to " + destinationCoord.x() + ", " + destinationCoord.y());
+                logger.info("Successfully initiated walk to " + destinationCoord.x() + ", " + destinationCoord.y());
                 return true;
             } else {
-                Logger.logWarn("Failed to walk to " + destinationCoord.x() + ", " + destinationCoord.y() + " - result: " + result);
+                logger.warn("Failed to walk to " + destinationCoord.x() + ", " + destinationCoord.y() + " - result: " + result);
                 return false;
             }
         } catch (Exception e) {
-            Logger.logTrace("Exception while walking to " + destinationCoord.x() + ", " + destinationCoord.y() + ": " + e.getMessage(), e);
+            logger.trace("Exception while walking to " + destinationCoord.x() + ", " + destinationCoord.y() + ": " + e.getMessage(), e);
             return false;
         }
     }

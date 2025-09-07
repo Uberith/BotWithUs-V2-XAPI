@@ -2,6 +2,7 @@ package net.botwithus.xapi.script.permissive.node;
 
 import net.botwithus.scripts.Script;
 import net.botwithus.xapi.script.permissive.Interlock;
+import net.botwithus.xapi.script.permissive.base.PermissiveScript;
 import net.botwithus.xapi.script.permissive.serialization.InterlockJson;
 import net.botwithus.xapi.script.permissive.serialization.TreeNodeJson;
 
@@ -18,66 +19,66 @@ public class Branch extends TreeNode {
     private TreeNode successNode, failureNode;
     private Callable<TreeNode> successNodeC, failureNodeC;
 
-    public Branch (Script script, String desc, Interlock... Interlocks) {
+    public Branch (PermissiveScript script, String desc, Interlock... Interlocks) {
         super(script, desc);
         this.interlocks = Interlocks;
     }
 
-    public Branch(Script script, String desc, Callable<TreeNode> successNode, TreeNode failureNode, Interlock... interlocks) {
+    public Branch(PermissiveScript script, String desc, Callable<TreeNode> successNode, TreeNode failureNode, Interlock... interlocks) {
         super(script, desc);
         this.interlocks = interlocks;
         this.successNodeC = successNode;
         this.failureNode = failureNode;
     }
-    public Branch(Script script, String desc, TreeNode successNode, Callable<TreeNode> failureNode, Interlock... interlocks) {
+    public Branch(PermissiveScript script, String desc, TreeNode successNode, Callable<TreeNode> failureNode, Interlock... interlocks) {
         super(script, desc);
         this.interlocks = interlocks;
         this.successNode = successNode;
         this.failureNodeC = failureNode;
     }
-    public Branch(Script script, String desc, Callable<TreeNode> successNode, Callable<TreeNode> failureNode, Interlock... interlocks) {
+    public Branch(PermissiveScript script, String desc, Callable<TreeNode> successNode, Callable<TreeNode> failureNode, Interlock... interlocks) {
         super(script, desc);
         this.interlocks = interlocks;
         this.successNodeC = successNode;
         this.failureNodeC = failureNode;
     }
-    public Branch(Script script, String desc, TreeNode successNode, TreeNode failureNode, Interlock... interlocks) {
+    public Branch(PermissiveScript script, String desc, TreeNode successNode, TreeNode failureNode, Interlock... interlocks) {
         super(script, desc);
         this.interlocks = interlocks;
         this.successNode = successNode;
         this.failureNode = failureNode;
     }
-    public Branch(Script script, String desc, TreeNode successNode, TreeNode failureNode, Callable<Interlock[]> interlocks) {
+    public Branch(PermissiveScript script, String desc, TreeNode successNode, TreeNode failureNode, Callable<Interlock[]> interlocks) {
         super(script, desc);
         this.interlocksC = interlocks;
         this.successNode = successNode;
         this.failureNode = failureNode;
     }
-    public Branch(Script script, String desc, String definedIn, Callable<TreeNode> successNode, TreeNode failureNode, Interlock... interlocks) {
+    public Branch(PermissiveScript script, String desc, String definedIn, Callable<TreeNode> successNode, TreeNode failureNode, Interlock... interlocks) {
         super(script, desc, definedIn);
         this.interlocks = interlocks;
         this.successNodeC = successNode;
         this.failureNode = failureNode;
     }
-    public Branch(Script script, String desc, String definedIn, TreeNode successNode, Callable<TreeNode> failureNode, Interlock... interlocks) {
+    public Branch(PermissiveScript script, String desc, String definedIn, TreeNode successNode, Callable<TreeNode> failureNode, Interlock... interlocks) {
         super(script, desc, definedIn);
         this.interlocks = interlocks;
         this.successNode = successNode;
         this.failureNodeC = failureNode;
     }
-    public Branch(Script script, String desc, String definedIn, Callable<TreeNode> successNode, Callable<TreeNode> failureNode, Interlock... interlocks) {
+    public Branch(PermissiveScript script, String desc, String definedIn, Callable<TreeNode> successNode, Callable<TreeNode> failureNode, Interlock... interlocks) {
         super(script, desc, definedIn);
         this.interlocks = interlocks;
         this.successNodeC = successNode;
         this.failureNodeC = failureNode;
     }
-    public Branch(Script script, String desc, String definedIn, TreeNode successNode, TreeNode failureNode, Interlock... interlocks) {
+    public Branch(PermissiveScript script, String desc, String definedIn, TreeNode successNode, TreeNode failureNode, Interlock... interlocks) {
         super(script, desc, definedIn);
         this.interlocks = interlocks;
         this.successNode = successNode;
         this.failureNode = failureNode;
     }
-    public Branch(Script script, String desc, String definedIn, TreeNode successNode, TreeNode failureNode, Callable<Interlock[]> interlocks) {
+    public Branch(PermissiveScript script, String desc, String definedIn, TreeNode successNode, TreeNode failureNode, Callable<Interlock[]> interlocks) {
         super(script, desc, definedIn);
         this.interlocksC = interlocks;
         this.successNode = successNode;

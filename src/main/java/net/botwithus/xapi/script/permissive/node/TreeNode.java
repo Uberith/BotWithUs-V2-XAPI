@@ -2,6 +2,7 @@ package net.botwithus.xapi.script.permissive.node;
 
 import net.botwithus.scripts.Script;
 import net.botwithus.xapi.script.permissive.EvaluationResult;
+import net.botwithus.xapi.script.permissive.base.PermissiveScript;
 import net.botwithus.xapi.script.permissive.interfaces.ITreeNode;
 import net.botwithus.xapi.script.permissive.serialization.TreeNodeJson;
 
@@ -13,19 +14,19 @@ public abstract class TreeNode implements ITreeNode {
     private EvaluationResult<Boolean> latestValidate = new EvaluationResult<>(false);
     private String definedIn = "";
 
-    protected Script script;
+    protected PermissiveScript script;
     private Callable<String> desc = () -> "";
 
-    public TreeNode(Script script) {
+    public TreeNode(PermissiveScript script) {
         this.script = script;
     }
 
-    public TreeNode(Script script, String desc) {
+    public TreeNode(PermissiveScript script, String desc) {
         this.script = script;
         this.desc = () -> desc;
     }
 
-    public TreeNode(Script script, String desc, String definedIn) {
+    public TreeNode(PermissiveScript script, String desc, String definedIn) {
         this.script = script;
         this.desc = () -> desc;
         this.definedIn = definedIn;
@@ -93,7 +94,7 @@ public abstract class TreeNode implements ITreeNode {
         this.desc = () -> desc;
     }
 
-    public Script getScript() {
+    public PermissiveScript getScript() {
         return script;
     }
 

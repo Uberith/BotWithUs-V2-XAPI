@@ -4,6 +4,7 @@ import net.botwithus.rs3.cache.assets.ConfigManager;
 import net.botwithus.rs3.interfaces.Component;
 import net.botwithus.rs3.interfaces.ComponentType;
 import net.botwithus.rs3.interfaces.InterfaceManager;
+import net.botwithus.rs3.interfaces.Interfaces;
 import net.botwithus.xapi.query.base.Query;
 import net.botwithus.xapi.query.result.ResultSet;
 
@@ -218,7 +219,7 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
     public ComponentQuery option(BiFunction<String, CharSequence, Boolean> spred, String... option) {
         this.root = this.root.and(t -> {
             var options = t.getOptions();
-            return options != null && Arrays.stream(option).anyMatch(i -> options.stream().anyMatch(j -> spred.apply(i, j)));
+            return options != null && Arrays.stream(option).anyMatch(i -> i != null && options.stream().anyMatch(j -> j != null && spred.apply(i, j)));
         });
         return this;
     }
@@ -264,7 +265,7 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
     public ResultSet<Component> results() {
         return new ResultSet<>(
                 Arrays.stream(ids)
-                        .mapToObj(InterfaceManager::getInterface) // Map IDs to Interfaces
+                        .mapToObj(Interfaces::getInterface) // Map IDs to Interfaces
                         .filter(Objects::nonNull) // Filter out null interfaces
                         .flatMap(interfaceManager -> interfaceManager.getComponents().stream()) // Flatten components
                         .filter(this) // Apply the predicate (root.test)

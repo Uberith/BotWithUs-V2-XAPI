@@ -2,10 +2,15 @@ package net.botwithus.xapi.script.permissive;
 
 import net.botwithus.xapi.script.permissive.base.PermissiveScript;
 import net.botwithus.xapi.script.permissive.serialization.PermissiveJson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Supplier;
 
 public class Permissive implements Supplier<Boolean> {
+
+    private static final Logger logger = LoggerFactory.getLogger(Permissive.class);
+
     private final String name;
     private final Supplier<Boolean> predicate;
     private EvaluationResult<Boolean> lastResult = new EvaluationResult<>(false);
@@ -19,11 +24,11 @@ public class Permissive implements Supplier<Boolean> {
     public Boolean get() {
         try {
             boolean result = predicate.get();
-//            script.getLogger().info("[" + Thread.currentThread().getName() + "]: " + "[Permissive] " + name + ": " + result);
+            logger.info("    [Permissive] " + name + ": " + result);
             lastResult = new EvaluationResult<>(result);
             return result;
         } catch (Exception e) {
-//            script.getLogger().severe(e.getMessage() + "\nException thrown in permissive predicate: " + name);
+            logger.error("Exception thrown in permissive predicate: " + name + "\n" + e.getMessage(), e);
             lastResult = new EvaluationResult<>(false);
             return false;
         }

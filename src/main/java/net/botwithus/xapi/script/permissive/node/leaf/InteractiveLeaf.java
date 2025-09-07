@@ -2,6 +2,7 @@ package net.botwithus.xapi.script.permissive.node.leaf;
 
 import net.botwithus.rs3.minimenu.Interactive;
 import net.botwithus.scripts.Script;
+import net.botwithus.xapi.script.permissive.base.PermissiveScript;
 import net.botwithus.xapi.script.permissive.node.LeafNode;
 
 import java.util.concurrent.Callable;
@@ -22,7 +23,7 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
      * @param script  The parent script.
      * @param successAction The callable logic for the leaf node.
      */
-    public InteractiveLeaf(Script script, Runnable successAction) {
+    public InteractiveLeaf(PermissiveScript script, Runnable successAction) {
         super(script);
         this.successAction = successAction;
     }
@@ -33,7 +34,7 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
      * @param desc The description of the leaf node.
      * @param successAction The callable logic for the leaf node.
      */
-    public InteractiveLeaf(Script script, String desc, Runnable successAction) {
+    public InteractiveLeaf(PermissiveScript script, String desc, Runnable successAction) {
         super(script, desc);
         this.successAction = successAction;
     }
@@ -45,7 +46,7 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
      * @param definedIn The definedIn string of the leaf node.
      * @param successAction The callable logic for the leaf node.
      */
-    public InteractiveLeaf(Script script, String desc, String definedIn, Runnable successAction) {
+    public InteractiveLeaf(PermissiveScript script, String desc, String definedIn, Runnable successAction) {
         super(script, desc, definedIn);
         this.successAction = successAction;
     }
@@ -55,7 +56,7 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
      * @param script The parent script.
      * @param successCallable The callable logic for the leaf node.
      */
-    public InteractiveLeaf(Script script, Callable<Boolean> successCallable) {
+    public InteractiveLeaf(PermissiveScript script, Callable<Boolean> successCallable) {
         super(script);
         this.successCallable = successCallable;
     }
@@ -66,7 +67,7 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
      * @param desc The description of the leaf node.
      * @param successCallable The callable logic for the leaf node.
      */
-    public InteractiveLeaf(Script script, String desc, Callable<Boolean> successCallable) {
+    public InteractiveLeaf(PermissiveScript script, String desc, Callable<Boolean> successCallable) {
         super(script, desc);
         this.successCallable = successCallable;
     }
@@ -78,7 +79,7 @@ public class InteractiveLeaf<T extends Interactive> extends LeafNode {
      * @param definedIn The definedIn string of the leaf node.
      * @param successCallable The callable logic for the leaf node.
      */
-    public InteractiveLeaf(Script script, String desc, String definedIn, Callable<Boolean> successCallable) {
+    public InteractiveLeaf(PermissiveScript script, String desc, String definedIn, Callable<Boolean> successCallable) {
         super(script, desc, definedIn);
         this.successCallable = successCallable;
     }
