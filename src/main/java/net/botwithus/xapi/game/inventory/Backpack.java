@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
-public final class Backpack {
+public class Backpack {
 
     /**
      * Retrieves the backpack inventory with ID 93.
