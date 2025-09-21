@@ -1,5 +1,7 @@
 package net.botwithus.xapi.script;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 import net.botwithus.events.EventInfo;
@@ -16,8 +18,15 @@ import net.botwithus.xapi.script.ui.interfaces.BuildableUI;
 import net.botwithus.xapi.util.statistic.BotStat;
 import net.botwithus.xapi.util.time.Stopwatch;
 
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+
 
 public abstract class BwuScript extends PermissiveScript {
     private BwuGraphicsContext graphicsContext = null;
@@ -25,6 +34,10 @@ public abstract class BwuScript extends PermissiveScript {
 
     public LocalPlayer player;
     public BotStat botStatInfo = new BotStat();
+
+    public String getName() {
+        return this.getClass().getSimpleName();
+    }
 
     @Override
     public void onDraw(Workspace workspace) {
@@ -51,25 +64,34 @@ public abstract class BwuScript extends PermissiveScript {
     public void performSavePersistentData() {
         try {
             JsonObject obj = new JsonObject();
-
             savePersistentData(obj);
-            println("Settings: " + obj);
 
-            // configuration.addProperty(getName() + "|Settings", obj.toString());
+            Path path = Paths.get(System.getProperty("user.home"), ".botwithus", "configs", getName() + "_settings.json");
+            Files.createDirectories(path.getParent());
+
+            try (Writer writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+                new GsonBuilder().setPrettyPrinting().create().toJson(obj, writer);
+            }
         } catch (Exception e) {
             println("Failed to save persistent data");
+            e.printStackTrace();
         }
     }
 
     public void performLoadPersistentData() {
         try {
-            // var settingKey = getName() + "|Settings";
-            // if (getConfiguration().getProperty(settingKey) != null && !getConfiguration().getProperty(settingKey).equals("null")) {
-            //     var obj = gson.fromJson(getConfiguration().getProperty(settingKey), JsonObject.class);
-            //     loadPersistentData(obj);
-            // }
+            Path path = Paths.get(System.getProperty("user.home"), ".botwithus", "configs", getName() + "_settings.json");
+            if (Files.exists(path)) {
+                try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+                    JsonObject obj = new Gson().fromJson(reader, JsonObject.class);
+                    if (obj != null) {
+                        loadPersistentData(obj);
+                    }
+                }
+            }
         } catch (Exception e) {
             println("Failed to load persistent data");
+            e.printStackTrace();
         }
     }
 
