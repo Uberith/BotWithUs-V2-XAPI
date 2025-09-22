@@ -30,7 +30,7 @@ public class Bank {
     private static final int PRESET_BROWSING_VARBIT_ID = 49662, SELECTED_OPTIONS_TAB_VARBIT_ID = 45191, WITHDRAW_TYPE_VARBIT_ID = 45189, WITHDRAW_X_VARP_ID = 111;
     private static final Pattern BANK_NAME_PATTERN = Pattern.compile("^(?!.*deposit).*(bank|counter).*$", Pattern.CASE_INSENSITIVE);
     private static final String LAST_PRESET_OPTION = "Load Last Preset from";
-    private static final int INVENTORY_ID = 95, INTERFACE_INDEX = 517, COMPONENT_INDEX = 202;
+    public static int INVENTORY_ID = 95, INTERFACE_INDEX = 517, COMPONENT_INDEX = 202;
     private static final Logger logger = LoggerFactory.getLogger(Bank.class);
 
 
