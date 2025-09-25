@@ -27,6 +27,9 @@ public abstract class PermissiveScript extends DelayableScript {
 
     private ChainedActionLeaf activeChainedAction = null;
     
+    // Time tracking for execution interval control
+    private long lastExecutionTime = 0;
+    
     // Logger instance for this script
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -35,6 +38,13 @@ public abstract class PermissiveScript extends DelayableScript {
      */
     @Override
     public void doRun() {
+        // Check if at least 300ms have passed since the last execution
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastExecutionTime < 300) {
+            return; // Skip execution if less than 300ms have passed
+        }
+        lastExecutionTime = currentTime;
+        
         logger.debug("Processing game tick");
 
         if (!onPreTick()) {

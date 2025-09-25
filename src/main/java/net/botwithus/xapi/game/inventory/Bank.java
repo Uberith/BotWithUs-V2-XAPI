@@ -41,7 +41,7 @@ public class Bank {
      *
      * @return {@code true} if the bank was successfully opened, {@code false} otherwise.
      */
-    public static boolean open(PermissiveScript script) {
+    public static boolean open() {
         try {
             logger.info("Attempting find bank obj");
             var obj = SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Use")
@@ -66,7 +66,7 @@ public class Bank {
                 logger.info("useObj: " + useObj);
             }
             if (obj != null && useObj) {
-                script.info("Interacting via Object: " + obj.getName());
+                logger.info("Interacting via Object: " + obj.getName());
                 var actions = obj.getOptions();
                 logger.info("Available Options: " + actions);
                 if (!actions.isEmpty()) {
@@ -75,23 +75,23 @@ public class Bank {
                     if (action.isPresent()) {
                         logger.info("Attempting to interact with bank object using action: " + action.get());
                         var interactionResult = obj.interact(action.get());
-                        script.info("Object interaction completed: " + interactionResult);
+                        logger.info("Object interaction completed: " + interactionResult);
                         return interactionResult > 0;
                     } else {
-                        script.warn("No valid action found for bank object");
+                        logger.warn("No valid action found for bank object");
                         return false;
                     }
                 } else {
-                    script.warn("No options available on bank object");
+                    logger.warn("No options available on bank object");
                     return false;
                 }
             } else if (npc != null) {
-                script.info("Interacting via NPC");
+                logger.info("Interacting via NPC");
                 var interactionResult = npc.interact("Bank");
-                script.info("NPC interaction completed: " + interactionResult);
+                logger.info("NPC interaction completed: " + interactionResult);
                 return interactionResult > 0;
             }
-            script.warn("No valid bank object or NPC found");
+            logger.warn("No valid bank object or NPC found");
             return false;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
