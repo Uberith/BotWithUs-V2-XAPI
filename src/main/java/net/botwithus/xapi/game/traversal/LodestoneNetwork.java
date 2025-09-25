@@ -1,6 +1,5 @@
 package net.botwithus.xapi.game.traversal;
 
-import net.botwithus.rs3.interfaces.InterfaceManager;
 import net.botwithus.rs3.interfaces.Interfaces;
 import net.botwithus.xapi.query.ComponentQuery;
 
@@ -16,9 +15,7 @@ public class LodestoneNetwork {
      */
     public static boolean open() {
         var result = ComponentQuery.newQuery(1465).option("Lodestone network").results().first();
-//        return result != null && result.interact("Lodestone network");
-        // TODO: Fix this
-        return false;
+        return result != null && result.interact("Lodestone network") > 0;
     }
 
     /**
@@ -28,8 +25,6 @@ public class LodestoneNetwork {
      */
     public static boolean teleportToPreviousDestination() {
         var result = ComponentQuery.newQuery(1465).option("Previous Destination").results().first();
-//        return result != null && result.interact("Previous Destination");
-        // TODO: Fix this
-        return false;
+        return result != null && result.interact("Previous Destination") > 0;
     }
 }
