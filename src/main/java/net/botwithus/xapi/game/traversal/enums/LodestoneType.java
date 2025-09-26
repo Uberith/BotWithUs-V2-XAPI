@@ -5,7 +5,7 @@ import net.botwithus.rs3.interfaces.Interfaces;
 import net.botwithus.rs3.vars.VarDomain;
 import net.botwithus.util.Rand;
 import net.botwithus.xapi.game.traversal.LodestoneNetwork;
-import net.botwithus.xapi.script.base.DelayableScript;
+import net.botwithus.xapi.script.permissive.base.PermissiveScript;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +42,10 @@ public enum LodestoneType {
     private static final Logger logger = LoggerFactory.getLogger(LodestoneType.class);
     private static final int INTERFACE_ID = 1092;
 
+    public static int getInterfaceId() {
+        return INTERFACE_ID;
+    }
+
     private final int componentId;
     private final int varbitId;
     private final String teleportAction;
@@ -54,6 +58,18 @@ public enum LodestoneType {
         } else {
             this.teleportAction = "Teleport " + teleportTarget;
         }
+    }
+
+    public int getComponentId() {
+        return componentId;
+    }
+
+    public int getVarbitId() {
+        return varbitId;
+    }
+
+    public String getTeleportAction() {
+        return teleportAction;
     }
 
     public boolean isAvailable() {
@@ -77,7 +93,7 @@ public enum LodestoneType {
         return isAvailable();
     }
 
-    public boolean teleport(DelayableScript script) {
+    public boolean teleport(PermissiveScript script) {
         logger.info("Attempting to teleport using {}", this);
         var player = LocalPlayer.self();
         if (player == null) {
@@ -97,7 +113,9 @@ public enum LodestoneType {
                 int waitTicks = Rand.nextInt(18, 26);
                 logger.debug("Waiting up to {} ticks for the Lodestone network interface to open for {}", waitTicks, this);
                 script.delayUntil(LodestoneNetwork::isOpen, waitTicks);
-                return false;
+                if (!LodestoneNetwork.isOpen()) {
+                    return false;
+                }
             }
         }
 
