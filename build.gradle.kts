@@ -33,6 +33,7 @@ dependencies {
     implementation("net.botwithus.api:api:1.+")
     implementation("net.botwithus.imgui:imgui:1.+")
     implementation("org.projectlombok:lombok:1.18.26")
+    implementation("botwithus.navigation:nav-api:1.0.1-SNAPSHOT")
     implementation("com.google.code.gson:gson:2.10.1")
 
     // Logging dependencies

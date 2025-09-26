@@ -1,109 +1,115 @@
 package net.botwithus.xapi.game.traversal;
 
-import net.botwithus.rs3.entities.LocalPlayer;
-import net.botwithus.rs3.minimenu.Action;
-import net.botwithus.rs3.minimenu.MiniMenu;
+import botwithus.navigation.api.NavPath;
+import botwithus.navigation.api.State;
+import botwithus.navigation.api.TeleportData;
 import net.botwithus.rs3.world.Coordinate;
 import net.botwithus.rs3.world.Distance;
-import net.botwithus.util.Rand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Traverse {
-    private final static Logger logger = LoggerFactory.getLogger(Traverse.class);
+public final class Traverse {
+    private static final Logger logger = LoggerFactory.getLogger(Traverse.class);
 
-    private static final int MAX_LOCAL_DISTANCE = 80;
-    private static final int MAX_STEP_SIZE = 16;
-    private static final int MIN_STEP_SIZE = 10;
+    private Traverse() {
+        // Utility class
+    }
 
     /**
-     * Walks to a coordinate, automatically choosing minimap usage and step size.
-     * If the distance to the destination is less than 24, does not use minimap; otherwise, uses minimap.
-     * Step size is randomized between 10 and 16 (inclusive).
-     * @param destinationCoord The destination coordinate
-     * @return true if walking was initiated successfully
+     * Resolve and process a navigation path using the BotWithUs navigation API.
+     *
+     * @param destinationCoord destination tile to reach.
+     * @return {@code true} if navigation could be started or destination already reached.
      */
     public static boolean to(Coordinate destinationCoord) {
-        if (destinationCoord == null) {
-            logger.warn("ERROR: Coordinate is null");
-            return false;
-        }
-        var distance = Distance.to(destinationCoord);
-        var useMinimap = distance >= Rand.nextInt(22, 28);
-        var stepSize = Rand.nextInt(MIN_STEP_SIZE, MAX_STEP_SIZE + 1);
-        return bresenhamTo(destinationCoord, useMinimap, stepSize);
+        return navigate(destinationCoord);
     }
-    
+
     /**
-     * Walks to a coordinate using Bresenham line algorithm for pathfinding
-     * @param destinationCoord The destination coordinate
-     * @param minimap Whether to use minimap for walking (currently ignored, uses MiniMenu)
-     * @param stepSize Maximum step size for each movement
-     * @return true if walking was initiated successfully
+     * Backwards compatible entry point that now delegates to the navigation API.
+     * The {@code minimap} and {@code stepSize} hints are ignored because the nav-api
+     * is responsible for optimising the route.
      */
     public static boolean bresenhamTo(Coordinate destinationCoord, boolean minimap, int stepSize) {
-        LocalPlayer player = LocalPlayer.self();
-        if (player == null) {
-            logger.warn("[Traverse#bresenham] Player is null");
-            return false;
-        }
-
-        Coordinate currentCoordinate = player.getCoordinate();
-        if (currentCoordinate == null) {
-            logger.warn("[Traverse#bresenham] Current coordinate is null");
-            return false;
-        }
-
-        int dx = destinationCoord.x() - currentCoordinate.x();
-        int dy = destinationCoord.y() - currentCoordinate.y();
-        int distance = (int)Math.hypot(dx, dy);
-
-        if (distance > stepSize) {
-            int stepX = destinationCoord.x() + dx * stepSize / distance;
-            int stepY = destinationCoord.y() + dy * stepSize / distance;
-            return walkTo(new Coordinate(stepX, stepY, destinationCoord.z()), minimap);
-        } else {
-            return walkTo(destinationCoord, minimap);
-        }
+        return navigate(destinationCoord);
     }
 
     /**
-     * Walks to a coordinate using MiniMenu
-     * @param destinationCoord The destination coordinate
-     * @param minimap Whether to use minimap for walking (currently ignored, uses MiniMenu)
-     * @return true if walking was initiated successfully
+     * Backwards compatible entry point that now delegates to the navigation API.
+     * The {@code minimap} hint is ignored because the nav-api determines the optimal route.
      */
     public static boolean walkTo(Coordinate destinationCoord, boolean minimap) {
+        return navigate(destinationCoord);
+    }
+
+    private static boolean navigate(Coordinate destinationCoord) {
         if (destinationCoord == null) {
-            logger.warn("ERROR: Coordinate is null");
+            logger.warn("Cannot traverse: destination coordinate is null");
             return false;
         }
 
         try {
-            logger.info("Attempting to walk to " + destinationCoord.x() + ", " + destinationCoord.y());
-
-            if (Distance.to(destinationCoord) < 2) {
-                logger.info("Already close to target location, skipping walk");
+            if (Distance.to(destinationCoord) < 1.5d) {
+                logger.debug("Already adjacent to {}, skipping navigation.", destinationCoord);
                 return true;
             }
+        } catch (Exception distanceError) {
+            logger.trace("Distance check failed before navigation: {}", distanceError.getMessage(), distanceError);
+        }
 
-            if (Distance.to(destinationCoord) > MAX_LOCAL_DISTANCE) {
-                logger.info("Target location is too far away, using Bresenham pathfinding");
-                return bresenhamTo(destinationCoord, minimap, Rand.nextInt(MIN_STEP_SIZE, MAX_STEP_SIZE));
-            }
-
-            int result = MiniMenu.doAction(Action.WALK, minimap ? 1 : 0, destinationCoord.x(), destinationCoord.y());
-
-            if (result > 0) {
-                logger.info("Successfully initiated walk to " + destinationCoord.x() + ", " + destinationCoord.y());
-                return true;
-            } else {
-                logger.warn("Failed to walk to " + destinationCoord.x() + ", " + destinationCoord.y() + " - result: " + result);
+        try {
+            NavPath path = NavPath.resolve(destinationCoord);
+            if (path == null) {
+                logger.warn("Nav API returned no path for {}", destinationCoord);
                 return false;
             }
+
+            path.process();
+            State state = path.state();
+
+            path.getUsedTeleport().ifPresent(Traverse::logTeleportUsage);
+
+            switch (state) {
+                case FINISHED -> {
+                    logger.debug("Navigator reports destination {} already reached.", destinationCoord);
+                    return true;
+                }
+                case CONTINUE -> {
+                    logger.debug("Navigator processing path to {} (cost {}).", destinationCoord, path.getCost());
+                    return true;
+                }
+                case NO_PATH -> {
+                    logger.warn("Navigator could not resolve a path to {}.", destinationCoord);
+                    return false;
+                }
+                case FAILED -> {
+                    logger.warn("Navigator failed while processing path to {}.", destinationCoord);
+                    return false;
+                }
+                case IDLE -> {
+                    logger.debug("Navigator is idle for destination {}.", destinationCoord);
+                    return true;
+                }
+                default -> {
+                    logger.warn("Navigator returned unexpected state {} for {}.", state, destinationCoord);
+                    return false;
+                }
+            }
+        } catch (UnsatisfiedLinkError e) {
+            logger.error("Nav API native bindings are unavailable while traversing to {}.", destinationCoord, e);
+            return false;
         } catch (Exception e) {
-            logger.trace("Exception while walking to " + destinationCoord.x() + ", " + destinationCoord.y() + ": " + e.getMessage(), e);
+            logger.error("Unexpected error while traversing to {}.", destinationCoord, e);
             return false;
         }
+    }
+
+    private static void logTeleportUsage(TeleportData teleportData) {
+        logger.info(
+                "Nav API selected teleport '{}' (type {}) to {}",
+                teleportData.optionName(),
+                teleportData.interactionType(),
+                teleportData.toTile()
+        );
     }
 }
