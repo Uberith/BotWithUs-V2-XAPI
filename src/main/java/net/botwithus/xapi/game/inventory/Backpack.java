@@ -6,6 +6,7 @@ import net.botwithus.rs3.item.InventoryItem;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
@@ -57,8 +58,20 @@ public class Backpack {
      * @return true if any item name matches the predicate, false otherwise
      */
     public static boolean contains(BiFunction<String, CharSequence, Boolean> spred, String... names) {
+        if (names == null || names.length == 0) {
+            return false;
+        }
+        var sanitizedNames = Arrays.stream(names)
+                .filter(Objects::nonNull)
+                .toList();
+        if (sanitizedNames.isEmpty()) {
+            return false;
+        }
         Inventory backpack = getInventory();
-        return backpack.getItems().stream().map(InventoryItem::getName).anyMatch(name -> spred.apply(name, names[0]));
+        return backpack.getItems().stream()
+                .map(InventoryItem::getName)
+                .filter(Objects::nonNull)
+                .anyMatch(name -> sanitizedNames.stream().anyMatch(candidate -> Boolean.TRUE.equals(spred.apply(name, candidate))));
     }
 
     /**
@@ -101,8 +114,20 @@ public class Backpack {
      * @return the first matching item, or null if no match is found
      */
     public static InventoryItem getItem(BiFunction<String, CharSequence, Boolean> spred, String... names) {
+        if (names == null || names.length == 0) {
+            return null;
+        }
+        var sanitizedNames = Arrays.stream(names)
+                .filter(Objects::nonNull)
+                .toList();
+        if (sanitizedNames.isEmpty()) {
+            return null;
+        }
         Inventory backpack = getInventory();
-        return backpack.getItems().stream().filter(item -> spred.apply(item.getName(), names[0])).findFirst().orElse(null);
+        return backpack.getItems().stream()
+                .filter(item -> item.getName() != null && sanitizedNames.stream().anyMatch(candidate -> Boolean.TRUE.equals(spred.apply(item.getName(), candidate))))
+                .findFirst()
+                .orElse(null);
     }
 
     /**

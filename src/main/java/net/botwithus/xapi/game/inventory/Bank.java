@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -383,13 +382,19 @@ public class Bank {
     }
 
     public static boolean depositAllExcept(PermissiveScript script, String... itemNames) {
-        var nameSet = new HashSet<>(Arrays.asList(itemNames));
-        var idMap = Backpack.getItems().stream().filter(i -> Arrays.stream(itemNames).toList().contains(i)).collect(Collectors.toMap(Item::getId, Item::getName));
+        var names = itemNames == null ? new String[0] : itemNames;
+        var protectedNames = Arrays.stream(names)
+                .filter(name -> name != null && !name.isEmpty())
+                .collect(Collectors.toSet());
+        var protectedIds = Backpack.getItems().stream()
+                .filter(item -> item.getName() != null && protectedNames.contains(item.getName()))
+                .map(Item::getId)
+                .collect(Collectors.toSet());
         var items = ComponentQuery.newQuery(517).results().stream().filter(
-                        i -> !nameSet.contains(idMap.get(i.getItemId())) && (i.getOptions().contains("Deposit-All") || i.getOptions().contains("Deposit-1")))
+                        component -> !protectedIds.contains(component.getItemId()) && (component.getOptions().contains("Deposit-All") || component.getOptions().contains("Deposit-1")))
                 .map(Component::getItemId)
                 .collect(Collectors.toSet());
-        return !items.stream().map(i -> depositAll(script, ComponentQuery.newQuery(517).itemId(i))).toList().contains(false);
+        return !items.stream().map(id -> depositAll(script, ComponentQuery.newQuery(517).itemId(id))).toList().contains(false);
     }
 
     public static boolean depositAllExcept(PermissiveScript script, int... ids) {
