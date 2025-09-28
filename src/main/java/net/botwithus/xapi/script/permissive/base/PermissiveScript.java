@@ -19,7 +19,7 @@ import java.util.HashMap;
 
 
 public abstract class PermissiveScript extends DelayableScript {
-    private boolean debugMode = false;
+    boolean debugMode = false;
     private State currentState;
 
     // Map for states, with a name key for each state

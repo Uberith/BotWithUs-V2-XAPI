@@ -42,58 +42,54 @@ public class Bank {
      */
     public static boolean open() {
         try {
-            logger.info("Attempting find bank obj");
-            var obj = SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Use")
+            logger.debug("Starting bank open attempt");
+            var objectQuery = SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Use")
                     .or(SceneObjectQuery.newQuery().name(BANK_NAME_PATTERN).option("Bank"))
-                    .or(SceneObjectQuery.newQuery().name("Shantay chest")).results().nearest();
+                    .or(SceneObjectQuery.newQuery().name("Shantay chest"));
+            var obj = objectQuery.results().nearest();
 
-            logger.info("Attempting find bank npc");
-            var npc = NpcQuery.newQuery().option("Bank").results().nearest();
-            logger.info("Bank opening initiated");
+            var npcQuery = NpcQuery.newQuery().option("Bank");
+            var npc = npcQuery.results().nearest();
+            logger.debug("Bank candidates resolved: objectName={}, npcName={}",
+                    obj != null ? obj.getName() : "none",
+                    npc != null ? npc.getName() : "none");
+
             var useObj = true;
-
-            logger.info("Object is " + (obj != null ? "not null" : "null"));
-            logger.info("Npc is " + (npc != null ? "not null" : "null"));
-
             if (obj != null && npc != null) {
-                logger.info("Distance.to(obj): " + Distance.to(obj));
-                logger.info("Distance.to(npc): " + Distance.to(npc));
                 var objDist = Distance.to(obj);
                 var npcDist = Distance.to(npc);
-                if (!Double.isNaN(objDist) && !Double.isNaN(npcDist))
-                    useObj = Distance.to(obj) < Distance.to(npc);
-                logger.info("useObj: " + useObj);
+                logger.debug("Candidate distances -> object: {}, npc: {}", objDist, npcDist);
+                if (!Double.isNaN(objDist) && !Double.isNaN(npcDist)) {
+                    useObj = objDist < npcDist;
+                }
+                logger.debug("Interaction source resolved to {}", useObj ? "object" : "npc");
             }
+
             if (obj != null && useObj) {
-                logger.info("Interacting via Object: " + obj.getName());
                 var actions = obj.getOptions();
-                logger.info("Available Options: " + actions);
-                if (!actions.isEmpty()) {
-                    var action = actions.stream().filter(i -> i != null && !i.isEmpty()).findFirst();
-                    logger.info("action.isPresent(): " + action.isPresent());
-                    if (action.isPresent()) {
-                        logger.info("Attempting to interact with bank object using action: " + action.get());
-                        var interactionResult = obj.interact(action.get());
-                        logger.info("Object interaction completed: " + interactionResult);
-                        return interactionResult > 0;
-                    } else {
-                        logger.warn("No valid action found for bank object");
-                        return false;
-                    }
+                logger.debug("Attempting object interaction -> name={}, options={}", obj.getName(), actions);
+                var action = actions.stream().filter(option -> option != null && !option.isEmpty()).findFirst();
+                if (action.isPresent()) {
+                    var option = action.get();
+                    logger.debug("Invoking object action {}", option);
+                    var interactionResult = obj.interact(option);
+                    logger.debug("Object interaction result={}", interactionResult);
+                    return interactionResult > 0;
                 } else {
-                    logger.warn("No options available on bank object");
+                    logger.warn("No valid action found for bank object {}", obj.getName());
                     return false;
                 }
             } else if (npc != null) {
-                logger.info("Interacting via NPC");
+                logger.debug("Attempting NPC interaction -> name={}", npc.getName());
                 var interactionResult = npc.interact("Bank");
-                logger.info("NPC interaction completed: " + interactionResult);
+                logger.debug("NPC interaction result={}", interactionResult);
                 return interactionResult > 0;
             }
-            logger.warn("No valid bank object or NPC found");
+
+            logger.warn("No valid bank object or NPC found during open attempt");
             return false;
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            logger.error("Unexpected error while opening bank", e);
             return false;
         }
     }
@@ -103,7 +99,9 @@ public class Bank {
      * @return true if bank is open, false otherwise
      */
     public static boolean isOpen() {
-        return Interfaces.isOpen(INTERFACE_INDEX);
+        var open = Interfaces.isOpen(INTERFACE_INDEX);
+        logger.debug("Bank interface open state -> {}", open);
+        return open;
     }
 
     /**
@@ -112,7 +110,10 @@ public class Bank {
      * @return true if the interface was closed, false otherwise
      */
     public static boolean close() {
-        return MiniMenu.doAction(Action.COMPONENT, 1, -1, 33882430) > 0;
+        logger.debug("Close bank request");
+        var result = MiniMenu.doAction(Action.COMPONENT, 1, -1, 33882430) > 0;
+        logger.debug("Close bank result -> success={}", result);
+        return result;
     }
 
     /**
@@ -125,30 +126,36 @@ public class Bank {
     }
 
     public static boolean loadLastPreset() {
+        logger.debug("Load last preset request");
         var obj = SceneObjectQuery.newQuery()
                 .option(LAST_PRESET_OPTION).results().nearest();
         var npc = NpcQuery.newQuery().option(LAST_PRESET_OPTION).results().nearest();
+        logger.debug("Last preset candidates -> object={}, npc={}",
+                obj != null ? obj.getName() : "none",
+                npc != null ? npc.getName() : "none");
+
         var useObj = true;
-
-//        logger.debug("Object is " + (obj != null ? "not null" : "null"));
-//        logger.debug("Npc is " + (npc != null ? "not null" : "null"));
-
         if (obj != null && npc != null) {
-//            logger.debug("Distance.to(obj): " + Distance.to(obj));
-//            logger.debug("Distance.to(npc): " + Distance.to(npc));
             var objDist = Distance.to(obj);
             var npcDist = Distance.to(npc);
-            if (!Double.isNaN(objDist) && !Double.isNaN(npcDist))
-                useObj = Distance.to(obj) < Distance.to(npc);
-//            logger.debug("useObj: " + useObj);
+            logger.debug("Last preset distances -> object: {}, npc: {}", objDist, npcDist);
+            if (!Double.isNaN(objDist) && !Double.isNaN(npcDist)) {
+                useObj = objDist < npcDist;
+            }
+            logger.debug("Last preset interaction source -> {}", useObj ? "object" : "npc");
         }
         if (obj != null && useObj) {
-//            logger.debug("Interacting via Object: " + obj.getName());
-            return obj.interact(LAST_PRESET_OPTION) > 0;
+            logger.debug("Interacting with preset object {}", obj.getName());
+            var result = obj.interact(LAST_PRESET_OPTION);
+            logger.debug("Preset object interaction result={}", result);
+            return result > 0;
         } else if (npc != null) {
-//            logger.debug("Interacting via Npc: " + npc.getName());
-            return npc.interact(LAST_PRESET_OPTION) > 0;
+            logger.debug("Interacting with preset NPC {}", npc.getName());
+            var result = npc.interact(LAST_PRESET_OPTION);
+            logger.debug("Preset NPC interaction result={}", result);
+            return result > 0;
         }
+        logger.warn("No valid object or NPC found for last preset request");
         return false;
     }
 
@@ -191,16 +198,30 @@ public class Bank {
     }
 
     public static boolean interact(int slot, int option) {
+        logger.debug("Bank component interact request -> slot={}, option={}", slot, option);
         ResultSet<InventoryItem> results = InventoryItemQuery.newQuery(INVENTORY_ID).slot(slot).results();
         var item = results.first();
-        if (item != null) {
-            logger.info("[Inventory#interact(slot, option)]: " + item.getId());
-            ResultSet<Component> queryResults = ComponentQuery.newQuery(INTERFACE_INDEX).id(COMPONENT_INDEX).itemId(item.getId()).results();
-            logger.info("[Inventory#interact(slot, option)]: QueryResults: " + queryResults.size());
-            var result = queryResults.first();
-            return result != null && result.interact(option) > 0;
+        if (item == null) {
+            logger.debug("Bank component interact aborted -> no item at slot {}", slot);
+            return false;
         }
-        return false;
+
+        logger.debug("Bank component interact matched itemId={}, name={}, slot={}", item.getId(), item.getName(), item.getSlot());
+        ResultSet<Component> queryResults = ComponentQuery.newQuery(INTERFACE_INDEX)
+                .id(COMPONENT_INDEX)
+                .itemId(item.getId())
+                .results();
+
+        logger.debug("Bank component interact found {} component candidates", queryResults.size());
+        var component = queryResults.first();
+        if (component == null) {
+            logger.warn("No bank component found for slot {} itemId {}", slot, item.getId());
+            return false;
+        }
+
+        var interactionResult = component.interact(option);
+        logger.debug("Bank component interact result={} for componentId={}", interactionResult, component.getItemId());
+        return interactionResult > 0;
     }
 
     /**
@@ -236,14 +257,18 @@ public class Bank {
      * @param option the doAction option to execute on the item.
      */
     public static boolean withdraw(InventoryItemQuery query, int option) {
+        logger.debug("Withdraw request -> option={}", option);
         setTransferOption(TransferOptionType.ALL);
         var item = query.results().first();
-        if (item != null) {
-            logger.info("Item: " + item.getName());
-        } else {
-            logger.info("Item is null");
+        if (item == null) {
+            logger.debug("Withdraw request failed -> no matching item");
+            return false;
         }
-        return item != null && interact(item.getSlot(), option);
+
+        logger.debug("Withdraw executing -> itemId={}, name={}, slot={}", item.getId(), item.getName(), item.getSlot());
+        var success = interact(item.getSlot(), option);
+        logger.debug("Withdraw result -> success={}, option={}, itemId={}", success, option, item.getId());
+        return success;
     }
 
     /**
@@ -254,10 +279,12 @@ public class Bank {
      * @return True if the item was successfully withdrawn, false otherwise.
      */
     public static boolean withdraw(String itemName, int option) {
-        if (itemName != null && !itemName.isEmpty()) {
-            return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).name(itemName), option);
+        logger.debug("Withdraw by name request -> name={}, option={}", itemName, option);
+        if (itemName == null || itemName.isEmpty()) {
+            logger.debug("Withdraw by name aborted -> name is empty");
+            return false;
         }
-        return false;
+        return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).name(itemName), option);
     }
 
     /**
@@ -268,10 +295,12 @@ public class Bank {
      * @return True if the item was successfully withdrawn, false otherwise.
      */
     public static boolean withdraw(int itemId, int option) {
-        if (itemId >= 0) {
-            return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).id(itemId), option);
+        logger.debug("Withdraw by id request -> id={}, option={}", itemId, option);
+        if (itemId < 0) {
+            logger.debug("Withdraw by id aborted -> id is negative");
+            return false;
         }
-        return false;
+        return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).id(itemId), option);
     }
 
     /**
@@ -282,10 +311,12 @@ public class Bank {
      * @return true if the item was successfully withdrawn, false otherwise.
      */
     public static boolean withdraw(Pattern pattern, int option) {
-        if (pattern != null) {
-            return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).name(pattern), option);
+        logger.debug("Withdraw by pattern request -> option={}, pattern={}", option, pattern);
+        if (pattern == null) {
+            logger.debug("Withdraw by pattern aborted -> pattern is null");
+            return false;
         }
-        return false;
+        return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).name(pattern), option);
     }
 
     /**
@@ -295,14 +326,17 @@ public class Bank {
      * @return true if the item was successfully withdrawn, false otherwise.
      */
     public static boolean withdrawAll(String name) {
+        logger.debug("Withdraw-all by name request -> name={}", name);
         return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).name(name), 1);
     }
 
     public static boolean withdrawAll(int id) {
+        logger.debug("Withdraw-all by id request -> id={}", id);
         return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).id(id), 1);
     }
 
     public static boolean withdrawAll(Pattern pattern) {
+        logger.debug("Withdraw-all by pattern request -> pattern={}", pattern);
         return withdraw(InventoryItemQuery.newQuery(INVENTORY_ID).name(pattern), 1);
     }
 
@@ -312,9 +346,19 @@ public class Bank {
      * @return true if the items were successfully deposited, false otherwise
      */
     public static boolean depositAll() {
+        logger.debug("Deposit all carried items request");
         setTransferOption(TransferOptionType.ALL);
-        var comp = ComponentQuery.newQuery(INTERFACE_INDEX).option("Deposit carried items").results().first();
-        return comp != null && comp.interact(1) > 0;
+        var comp = ComponentQuery.newQuery(INTERFACE_INDEX)
+                .option("Deposit carried items")
+                .results()
+                .first();
+        if (comp == null) {
+            logger.warn("Deposit all component not found");
+            return false;
+        }
+        var result = comp.interact(1);
+        logger.debug("Deposit all interaction result={}", result);
+        return result > 0;
     }
 
     /**
@@ -323,8 +367,15 @@ public class Bank {
      * @return true if the items were successfully deposited, false otherwise
      */
     public static boolean depositEquipment() {
+        logger.debug("Deposit equipment request");
         Component component = ComponentQuery.newQuery(INTERFACE_INDEX).id(42).results().first();
-        return component != null && component.interact(1) > 0;
+        if (component == null) {
+            logger.warn("Deposit equipment component not found");
+            return false;
+        }
+        var result = component.interact(1);
+        logger.debug("Deposit equipment interaction result={}", result);
+        return result > 0;
     }
 
     /**
@@ -333,8 +384,15 @@ public class Bank {
      * @return true if the items were successfully deposited, false otherwise
      */
     public static boolean depositBackpack() {
+        logger.debug("Deposit backpack request");
         Component component = ComponentQuery.newQuery(INTERFACE_INDEX).id(39).results().first();
-        return component != null && component.interact(1) > 0;
+        if (component == null) {
+            logger.warn("Deposit backpack component not found");
+            return false;
+        }
+        var result = component.interact(1);
+        logger.debug("Deposit backpack interaction result={}", result);
+        return result > 0;
     }
 
 
@@ -347,38 +405,85 @@ public class Bank {
      * @return {@code true} if the item was successfully deposited, {@code false} otherwise.
      */
     public static boolean deposit(PermissiveScript script, ComponentQuery query, int option) {
-        var item = query.results().first();
-        return deposit(script, item, option);
+        logger.debug("Deposit via component query -> option={}", option);
+        var component = query.results().first();
+        if (component == null) {
+            logger.debug("Deposit via component query aborted -> no component match");
+            return false;
+        }
+        logger.debug("Deposit via component query using componentId={} itemId={}", component.getItemId(), component.getItemId());
+        return deposit(script, component, option);
     }
 
     public static boolean depositAll(PermissiveScript script, ComponentQuery query) {
-        var item = query.results().first();
-        return deposit(script, item, 1);//item.getOptions().contains("Deposit-All") ? 7 : 1);
+        logger.debug("Deposit-all via component query request");
+        var component = query.results().first();
+        if (component == null) {
+            logger.debug("Deposit-all via component query aborted -> no component match");
+            return false;
+        }
+        return deposit(script, component, 1);
     }
 
     public static boolean deposit(PermissiveScript script, Component comp, int option) {
+        logger.debug("Deposit component request -> option={}", option);
         setTransferOption(TransferOptionType.ALL);
-        var val = comp != null && comp.interact(option) > 0;
-        if (val) script.delay(Rand.nextInt(1, 2));
-        return val;
+        if (comp == null) {
+            logger.warn("Deposit component request failed -> component not found");
+            return false;
+        }
+        var interactionResult = comp.interact(option);
+        logger.debug("Deposit component interaction result={} for componentId={}", interactionResult, comp.getItemId());
+        if (interactionResult > 0) {
+            script.delay(Rand.nextInt(1, 2));
+            return true;
+        }
+        return false;
     }
 
     public static boolean depositAll(PermissiveScript script, String... itemNames) {
-        return !InventoryItemQuery.newQuery(93).name(itemNames).results().stream().map(Item::getId).distinct().map(
-                i -> depositAll(script, ComponentQuery.newQuery(517).itemId(i))
-        ).toList().contains(false);
+        var namesDescription = itemNames == null ? "null" : Arrays.toString(itemNames);
+        var ids = InventoryItemQuery.newQuery(93).name(itemNames).results().stream()
+                .map(Item::getId)
+                .distinct()
+                .toList();
+        logger.debug("Deposit-all by names -> names={}, distinctIds={}", namesDescription, ids.size());
+        var results = ids.stream()
+                .map(id -> depositAll(script, ComponentQuery.newQuery(517).itemId(id)))
+                .toList();
+        var success = !results.contains(false);
+        logger.debug("Deposit-all by names result -> success={}", success);
+        return success;
     }
 
     public static boolean depositAll(PermissiveScript script, int... itemIds) {
-        return !InventoryItemQuery.newQuery(93).id(itemIds).results().stream().map(Item::getId).distinct().map(
-                i -> depositAll(script, ComponentQuery.newQuery(517).itemId(i))
-        ).toList().contains(false);
+        var idsDescription = Arrays.toString(itemIds);
+        var ids = InventoryItemQuery.newQuery(93).id(itemIds).results().stream()
+                .map(Item::getId)
+                .distinct()
+                .toList();
+        logger.debug("Deposit-all by ids -> requestIds={}, distinctMatches={}", idsDescription, ids.size());
+        var results = ids.stream()
+                .map(id -> depositAll(script, ComponentQuery.newQuery(517).itemId(id)))
+                .toList();
+        var success = !results.contains(false);
+        logger.debug("Deposit-all by ids result -> success={}", success);
+        return success;
     }
 
     public static boolean depositAll(PermissiveScript script, Pattern... patterns) {
-        return !InventoryItemQuery.newQuery(93).name(patterns).results().stream().map(Item::getId).distinct().map(
-                i -> depositAll(script, ComponentQuery.newQuery(517).itemId(i))
-        ).toList().contains(false);
+        var patternDescription = patterns == null ? "null" : Arrays.toString(patterns);
+        var ids = InventoryItemQuery.newQuery(93).name(patterns).results().stream()
+                .map(Item::getId)
+                .distinct()
+                .toList();
+        logger.debug("Deposit-all by patterns -> patterns={}, distinctMatches={}", patternDescription, ids.size());
+        var results = ids.stream()
+                .map(id -> depositAll(script, ComponentQuery.newQuery(517).itemId(id)))
+                .toList();
+        var success = !results.contains(false);
+        logger.debug("Deposit-all by patterns result -> success={}", success);
+        return success;
     }
 
     public static boolean depositAllExcept(PermissiveScript script, String... itemNames) {
@@ -394,7 +499,11 @@ public class Bank {
                         component -> !protectedIds.contains(component.getItemId()) && (component.getOptions().contains("Deposit-All") || component.getOptions().contains("Deposit-1")))
                 .map(Component::getItemId)
                 .collect(Collectors.toSet());
-        return !items.stream().map(id -> depositAll(script, ComponentQuery.newQuery(517).itemId(id))).toList().contains(false);
+        logger.debug("Deposit-all-except by names -> protectedNames={}, protectedIds={}, candidates={}", protectedNames.size(), protectedIds.size(), items.size());
+        var results = items.stream().map(id -> depositAll(script, ComponentQuery.newQuery(517).itemId(id))).toList();
+        var success = !results.contains(false);
+        logger.debug("Deposit-all-except by names result -> success={}", success);
+        return success;
     }
 
     public static boolean depositAllExcept(PermissiveScript script, int... ids) {
@@ -403,7 +512,11 @@ public class Bank {
                         i -> !idSet.contains(i.getItemId()) && (i.getOptions().contains("Deposit-All") || i.getOptions().contains("Deposit-1")))
                 .map(Component::getItemId)
                 .collect(Collectors.toSet());
-        return !items.stream().map(i -> depositAll(script, ComponentQuery.newQuery(517).itemId(i))).toList().contains(false);
+        logger.debug("Deposit-all-except by ids -> protectedIds={}, candidates={}", idSet.size(), items.size());
+        var results = items.stream().map(i -> depositAll(script, ComponentQuery.newQuery(517).itemId(i))).toList();
+        var success = !results.contains(false);
+        logger.debug("Deposit-all-except by ids result -> success={}", success);
+        return success;
     }
 
     public static boolean depositAllExcept(PermissiveScript script, Pattern... patterns) {
@@ -413,7 +526,11 @@ public class Bank {
                         i -> !idMap.containsKey(i.getItemId()) && (i.getOptions().contains("Deposit-All") || i.getOptions().contains("Deposit-1")))
                 .map(Component::getItemId)
                 .collect(Collectors.toSet());
-        return !items.stream().map(i -> depositAll(script, ComponentQuery.newQuery(517).itemId(i))).toList().contains(false);
+        logger.debug("Deposit-all-except by patterns -> protectedIds={}, candidates={}", idMap.size(), items.size());
+        var results = items.stream().map(i -> depositAll(script, ComponentQuery.newQuery(517).itemId(i))).toList();
+        var success = !results.contains(false);
+        logger.debug("Deposit-all-except by patterns result -> success={}", success);
+        return success;
     }
 
     /**
@@ -424,6 +541,7 @@ public class Bank {
      * @return True if the item was successfully deposited, false otherwise.
      */
     public static boolean deposit(PermissiveScript script, int itemId, int option) {
+        logger.debug("Deposit by id request -> itemId={}, option={}", itemId, option);
         return deposit(script, ComponentQuery.newQuery(517).itemId(itemId), option);
     }
 
@@ -436,6 +554,7 @@ public class Bank {
      * @return True if the item was successfully deposited, false otherwise.
      */
     public static boolean deposit(PermissiveScript script, String name, BiFunction<String, CharSequence, Boolean> spred, int option) {
+        logger.debug("Deposit by name request -> name={}, option={}", name, option);
         return deposit(script, ComponentQuery.newQuery(517).itemName(name, spred), option);
     }
 
@@ -447,6 +566,7 @@ public class Bank {
      * @return True if the deposit was successful, false otherwise.
      */
     public static boolean deposit(PermissiveScript script, String name, int option) {
+        logger.debug("Deposit by name (contentEquals) request -> name={}, option={}", name, option);
         return deposit(script, name, String::contentEquals, option);
     }
 
@@ -459,14 +579,23 @@ public class Bank {
      */
     // TODO: Update to no longer use MiniMenu.doAction
     public static boolean loadPreset(PermissiveScript script, int presetNumber) {
+        logger.debug("Load preset request -> presetNumber={}", presetNumber);
         int presetBrowsingValue = VarDomain.getVarBitValue(PRESET_BROWSING_VARBIT_ID);
-        if ((presetNumber >= 10 && presetBrowsingValue < 1) || (presetNumber < 10 && presetBrowsingValue > 0)) {
+        logger.debug("Preset browsing state -> value={}", presetBrowsingValue);
+        var requiresToggle = (presetNumber >= 10 && presetBrowsingValue < 1) || (presetNumber < 10 && presetBrowsingValue > 0);
+        if (requiresToggle) {
+            logger.debug("Adjusting preset browsing tab for preset {}", presetNumber);
             MiniMenu.doAction(Action.COMPONENT, 1, 100, 33882231);
             script.delay(Rand.nextInt(1, 2));
         }
-        var result = MiniMenu.doAction(Action.COMPONENT, 1, presetNumber % 9,33882231) > 0;
+        var index = presetNumber % 9;
+        var result = MiniMenu.doAction(Action.COMPONENT, 1, index, 33882231) > 0;
+        logger.debug("Preset load interaction result -> success={}, index={}", result, index);
         if (result) {
             previousLoadedPreset = presetNumber;
+            logger.debug("Recorded previous loaded preset={}", previousLoadedPreset);
+        } else {
+            logger.warn("Failed to load preset {}", presetNumber);
         }
         return result;
     }
@@ -479,17 +608,28 @@ public class Bank {
      * @return The value of the varbit.
      */
     public static int getVarbitValue(int slot, int varbitId) {
+        logger.debug("Get varbit value request -> slot={}, varbitId={}", slot, varbitId);
         Inventory inventory = getInventory();
         if (inventory == null) {
+            logger.warn("Bank inventory unavailable when retrieving varbit {}", varbitId);
             return Integer.MIN_VALUE;
         }
 
-        return inventory.getVarbitValue(slot, varbitId);
+        var value = inventory.getVarbitValue(slot, varbitId);
+        logger.debug("Get varbit value result -> value={}", value);
+        return value;
     }
 
     public static boolean setTransferOption(TransferOptionType transferoptionType) {
         var depositOptionState = VarDomain.getVarBitValue(WITHDRAW_TYPE_VARBIT_ID);
-        return depositOptionState == transferoptionType.getVarbitStateValue() || MiniMenu.doAction(Action.COMPONENT, 1,-1, 33882215) > 0;
+        logger.debug("Transfer option request -> current={}, target={}", depositOptionState, transferoptionType);
+        if (depositOptionState == transferoptionType.getVarbitStateValue()) {
+            logger.debug("Transfer option already configured -> {}", transferoptionType);
+            return true;
+        }
+        var result = MiniMenu.doAction(Action.COMPONENT, 1, -1, 33882215) > 0;
+        logger.debug("Transfer option change result -> success={}, target={}", result, transferoptionType);
+        return result;
     }
 
     public static int getPreviousLoadedPreset() {
