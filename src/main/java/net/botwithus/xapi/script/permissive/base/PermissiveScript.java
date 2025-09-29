@@ -33,6 +33,47 @@ public abstract class PermissiveScript extends DelayableScript {
     // Logger instance for this script
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    private static final String LOGBACK_LOGGER_CLASS = "ch.qos.logback.classic.Logger";
+    private static final String LOGBACK_LEVEL_CLASS = "ch.qos.logback.classic.Level";
+    private static final String LOGBACK_CONTEXT_CLASS = "ch.qos.logback.classic.LoggerContext";
+
+    private static void applyDebugLoggingConfiguration(boolean debugEnabled, Logger referenceLogger) {
+        if (!configureLogback(debugEnabled, referenceLogger)) {
+            if (debugEnabled) {
+                referenceLogger.warn("Debug mode enabled but no supported logging backend was detected for level updates.");
+            }
+        }
+    }
+
+    private static boolean configureLogback(boolean debugEnabled, Logger referenceLogger) {
+        try {
+            Class<?> contextClass = Class.forName(LOGBACK_CONTEXT_CLASS);
+            Object context = LoggerFactory.getILoggerFactory();
+            if (!contextClass.isInstance(context)) {
+                return false;
+            }
+
+            Class<?> levelClass = Class.forName(LOGBACK_LEVEL_CLASS);
+            Object level = levelClass.getField(debugEnabled ? "DEBUG" : "INFO").get(null);
+            Class<?> loggerClass = Class.forName(LOGBACK_LOGGER_CLASS);
+
+            Object rootLogger = contextClass.getMethod("getLogger", String.class)
+                    .invoke(context, org.slf4j.Logger.ROOT_LOGGER_NAME);
+            if (!loggerClass.isInstance(rootLogger)) {
+                return false;
+            }
+
+            loggerClass.getMethod("setLevel", levelClass).invoke(rootLogger, level);
+            referenceLogger.debug("Updated Logback root logger level to {}", debugEnabled ? "DEBUG" : "INFO");
+            return true;
+        } catch (ClassNotFoundException ignored) {
+            return false;
+        } catch (ReflectiveOperationException ex) {
+            referenceLogger.warn("Failed to update Logback logger level: {}", ex.getMessage(), ex);
+            return false;
+        }
+    }
+
     /***
      * Main game tick logic
      */
@@ -198,6 +239,7 @@ public abstract class PermissiveScript extends DelayableScript {
 
     public void setDebugMode(boolean debugMode) {
         this.debugMode = debugMode;
+        applyDebugLoggingConfiguration(debugMode, logger);
     }
 
 
