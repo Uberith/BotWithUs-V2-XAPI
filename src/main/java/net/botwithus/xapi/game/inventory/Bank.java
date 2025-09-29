@@ -30,6 +30,7 @@ public class Bank {
     private static final Pattern BANK_NAME_PATTERN = Pattern.compile("^(?!.*deposit).*(bank|counter).*$", Pattern.CASE_INSENSITIVE);
     private static final String LAST_PRESET_OPTION = "Load Last Preset from";
     public static int INVENTORY_ID = 95, INTERFACE_INDEX = 517, COMPONENT_INDEX = 202;
+    private static final int BANK_ITEM_COMPONENT_HASH = (INTERFACE_INDEX << 16) | COMPONENT_INDEX;
     private static final Logger logger = LoggerFactory.getLogger(Bank.class);
 
 
@@ -206,22 +207,55 @@ public class Bank {
             return false;
         }
 
-        logger.debug("Bank component interact matched itemId={}, name={}, slot={}", item.getId(), item.getName(), item.getSlot());
+        var itemId = item.getId();
+        var slotIndex = item.getSlot();
+        logger.debug("Bank component interact matched itemId={}, name={}, slot={}", itemId, item.getName(), slotIndex);
         ResultSet<Component> queryResults = ComponentQuery.newQuery(INTERFACE_INDEX)
                 .id(COMPONENT_INDEX)
-                .itemId(item.getId())
+                .itemId(itemId)
                 .results();
 
         logger.debug("Bank component interact found {} component candidates", queryResults.size());
-        var component = queryResults.first();
-        if (component == null) {
-            logger.warn("No bank component found for slot {} itemId {}", slot, item.getId());
-            return false;
+        if (queryResults.isEmpty()) {
+            logger.debug("Bank component query returned no candidates for slot {} itemId {}. Using MiniMenu fallback.", slotIndex, itemId);
+            return interactViaMiniMenu(slotIndex, option, itemId, "query-empty");
         }
 
+        var component = queryResults.stream()
+                .filter(comp -> comp.getSubComponentId() == slotIndex)
+                .findFirst()
+                .orElseGet(() -> queryResults.stream()
+                        .filter(comp -> comp.getComponentId() == COMPONENT_INDEX)
+                        .findFirst()
+                        .orElse(queryResults.first()));
+
+        if (component == null) {
+            logger.debug("Unable to resolve bank component for slot {} itemId {} from {} candidates. Using MiniMenu fallback.", slotIndex, itemId, queryResults.size());
+            return interactViaMiniMenu(slotIndex, option, itemId, "resolve-null");
+        }
+
+        logger.debug("Bank component interact selected componentId={} subComponentId={}", component.getComponentId(), component.getSubComponentId());
         var interactionResult = component.interact(option);
-        logger.debug("Bank component interact result={} for componentId={}", interactionResult, component.getItemId());
-        return interactionResult > 0;
+
+        if (interactionResult > 0) {
+            logger.debug("Bank component interact result={} for componentId={}", interactionResult, component.getItemId());
+            return true;
+        }
+
+        logger.debug("Bank component interact result={} for componentId={} - falling back to MiniMenu.", interactionResult, component.getItemId());
+        return interactViaMiniMenu(slotIndex, option, itemId, "component-result-" + interactionResult);
+    }
+
+    private static boolean interactViaMiniMenu(int slotIndex, int option, int itemId, String reason) {
+        logger.debug("Bank MiniMenu fallback invoked -> slot={}, option={}, itemId={}, reason={}", slotIndex, option, itemId, reason);
+        var result = MiniMenu.doAction(Action.COMPONENT, option, slotIndex, BANK_ITEM_COMPONENT_HASH);
+        if (result > 0) {
+            logger.debug("Bank MiniMenu fallback success -> result={}", result);
+            return true;
+        }
+
+        logger.warn("Bank MiniMenu fallback failed -> slot={}, option={}, itemId={}, reason={}, result={}", slotIndex, option, itemId, reason, result);
+        return false;
     }
 
     /**
@@ -265,9 +299,10 @@ public class Bank {
             return false;
         }
 
-        logger.debug("Withdraw executing -> itemId={}, name={}, slot={}", item.getId(), item.getName(), item.getSlot());
+        var itemId = item.getId();
+        logger.debug("Withdraw executing -> itemId={}, name={}, slot={}", itemId, item.getName(), item.getSlot());
         var success = interact(item.getSlot(), option);
-        logger.debug("Withdraw result -> success={}, option={}, itemId={}", success, option, item.getId());
+        logger.debug("Withdraw result -> success={}, option={}, itemId={}", success, option, itemId);
         return success;
     }
 
