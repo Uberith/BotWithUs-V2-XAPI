@@ -4,6 +4,10 @@ import net.botwithus.util.Rand;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ResultSet<T> implements Iterable<T> {
@@ -75,6 +79,18 @@ public class ResultSet<T> implements Iterable<T> {
      */
     public Stream<T> stream() {
         return results.stream();
+    }
+
+    /**
+     * Groups elements using the provided classifier.
+     *
+     * @param classifier grouping function
+     * @param <K> key type
+     * @return grouped elements
+     */
+    public <K> Map<K, List<T>> groupBy(Function<? super T, ? extends K> classifier) {
+        Objects.requireNonNull(classifier, "classifier");
+        return results.stream().collect(Collectors.groupingBy(classifier));
     }
 
     /**

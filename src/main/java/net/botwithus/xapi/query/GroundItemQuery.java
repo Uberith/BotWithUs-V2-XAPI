@@ -8,9 +8,12 @@ import net.botwithus.rs3.world.Coordinate;
 import net.botwithus.rs3.world.Distance;
 import net.botwithus.rs3.world.World;
 import net.botwithus.xapi.query.base.Query;
+import net.botwithus.xapi.query.base.QueryCache;
+import net.botwithus.xapi.query.result.GroundItemResultSet;
 import net.botwithus.xapi.query.result.ResultSet;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.BiFunction;
@@ -22,6 +25,7 @@ import java.util.function.Predicate;
 public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>> {
 
     protected Predicate<GroundItem> root;
+    private final QueryCache<GroundItemResultSet> cache = new QueryCache<>();
 
     /**
      * Constructs a new GroundItemQuery with a default predicate.
@@ -40,17 +44,34 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         return new GroundItemQuery();
     }
 
+    public GroundItemQuery withCache(Duration ttl) {
+        cache.configure(ttl);
+        return this;
+    }
+
+    public static GroundItemQuery lootable(int... ids) {
+        return newQuery().valid(true).id(ids);
+    }
+
+    public static GroundItemQuery lootableWithin(double distance, int... ids) {
+        return lootable(ids).distance(distance);
+    }
+
     /**
      * Retrieves the results of the query.
      *
      * @return a ResultSet containing the query results
      */
     @Override
-    public ResultSet<GroundItem> results() {
-        return new ResultSet<>(World.getGroundItems().stream()
+    public GroundItemResultSet results() {
+        return cache.getOrCompute(() -> new GroundItemResultSet(World.getGroundItems().stream()
                 .flatMap(itemStack -> itemStack.getItems().stream())
                 .filter(this)
-                .toList());
+                .toList()));
+    }
+
+    public GroundItem nearestWithin(double maxDistance) {
+        return results().nearestWithin(maxDistance);
     }
 
     /**
@@ -75,6 +96,10 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         return this.root.test(groundItem);
     }
 
+    private void invalidateCache() {
+        cache.invalidate();
+    }
+
     // ========== Item-based filtering methods ==========
 
     /**
@@ -87,6 +112,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         if (ids.length == 0) {
             return this;
         }
+        invalidateCache();
         this.root = this.root.and(i -> Arrays.stream(ids).anyMatch(id -> id == i.getId()));
         return this;
     }
@@ -99,6 +125,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
      * @return the updated GroundItemQuery
      */
     public GroundItemQuery quantity(BiFunction<Integer, Integer, Boolean> spred, int quantity) {
+        invalidateCache();
         this.root = this.root.and(i -> spred.apply(i.getQuantity(), quantity));
         return this;
     }
@@ -123,6 +150,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         if (itemTypes.length == 0) {
             return this;
         }
+        invalidateCache();
         this.root = this.root.and(i -> Arrays.stream(itemTypes).anyMatch(itemType -> itemType.equals(i.getType())));
         return this;
     }
@@ -137,6 +165,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         if (categories.length == 0) {
             return this;
         }
+        invalidateCache();
         this.root = this.root.and(i -> Arrays.stream(categories).anyMatch(category -> category == i.getCategory()));
         return this;
     }
@@ -152,6 +181,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         if (names.length == 0) {
             return this;
         }
+        invalidateCache();
         this.root = this.root.and(i -> Arrays.stream(names).anyMatch(name -> spred.apply(i.getName(), name)));
         return this;
     }
@@ -176,6 +206,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         if (patterns.length == 0) {
             return this;
         }
+        invalidateCache();
         this.root = this.root.and(i -> {
             String itemName = i.getName();
             return itemName != null && Arrays.stream(patterns).anyMatch(p -> p.matcher(itemName).matches());
@@ -193,6 +224,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         if (stackTypes.length == 0) {
             return this;
         }
+        invalidateCache();
         this.root = this.root.and(i -> Arrays.stream(stackTypes).anyMatch(stackType -> stackType == i.getStackType()));
         return this;
     }
@@ -209,6 +241,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         if (coordinates.length == 0) {
             return this;
         }
+        invalidateCache();
         this.root = this.root.and(i -> Arrays.stream(coordinates).anyMatch(coord -> i.getStack().getCoordinate().equals(coord)));
         return this;
     }
@@ -220,6 +253,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
      * @return the updated GroundItemQuery
      */
     public GroundItemQuery inside(Area area) {
+        invalidateCache();
         this.root = this.root.and(i -> area.contains(i.getStack().getCoordinate()));
         return this;
     }
@@ -231,6 +265,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
      * @return the updated GroundItemQuery
      */
     public GroundItemQuery outside(Area area) {
+        invalidateCache();
         this.root = this.root.and(i -> !area.contains(i.getStack().getCoordinate()));
         return this;
     }
@@ -242,6 +277,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
      * @return the updated GroundItemQuery
      */
     public GroundItemQuery distance(double distance) {
+        invalidateCache();
         this.root = this.root.and(i -> Distance.to(i.getStack().getCoordinate()) <= distance);
         return this;
     }
@@ -253,6 +289,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
      * @return the updated GroundItemQuery
      */
     public GroundItemQuery valid(boolean valid) {
+        invalidateCache();
         this.root = this.root.and(i -> i.getStack().isValid() == valid);
         return this;
     }
@@ -266,6 +303,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
      * @return the updated GroundItemQuery
      */
     public GroundItemQuery and(GroundItemQuery other) {
+        invalidateCache();
         this.root = this.root.and(other.root);
         return this;
     }
@@ -277,6 +315,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
      * @return the updated GroundItemQuery
      */
     public GroundItemQuery or(GroundItemQuery other) {
+        invalidateCache();
         this.root = this.root.or(other.root);
         return this;
     }
@@ -287,6 +326,7 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
      * @return the updated GroundItemQuery with negated predicate
      */
     public GroundItemQuery invert() {
+        invalidateCache();
         this.root = this.root.negate();
         return this;
     }
@@ -301,3 +341,5 @@ public class GroundItemQuery implements Query<GroundItem, ResultSet<GroundItem>>
         return this;
     }
 }
+
+

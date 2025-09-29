@@ -6,8 +6,10 @@ import net.botwithus.rs3.interfaces.ComponentType;
 import net.botwithus.rs3.interfaces.InterfaceManager;
 import net.botwithus.rs3.interfaces.Interfaces;
 import net.botwithus.xapi.query.base.Query;
+import net.botwithus.xapi.query.base.QueryCache;
 import net.botwithus.xapi.query.result.ResultSet;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
@@ -17,6 +19,7 @@ import java.util.function.Predicate;
 public class ComponentQuery implements Query<Component, ResultSet<Component>> {
 
     protected Predicate<Component> root;
+    private final QueryCache<ResultSet<Component>> cache = new QueryCache<>();
     private int[] ids;
 
     /**
@@ -39,6 +42,23 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
         return new ComponentQuery(ids);
     }
 
+    public ComponentQuery withCache(Duration ttl) {
+        cache.configure(ttl);
+        return this;
+    }
+
+    public static ComponentQuery visible(int... interfaceIds) {
+        return newQuery(interfaceIds).hidden(false);
+    }
+
+    public static ComponentQuery buttonWithText(int interfaceId, int componentId, String... text) {
+        return newQuery(interfaceId)
+                .id(componentId)
+                .hidden(false)
+                .type(ComponentType.BUTTON)
+                .text((needle, haystack) -> haystack != null && needle.equalsIgnoreCase(haystack.toString()), text);
+    }
+
     /**
      * Filters components by type.
      *
@@ -46,6 +66,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery type(ComponentType... type) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(type).anyMatch(i -> t.getType() == i));
         return this;
     }
@@ -57,6 +79,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery id(int... ids) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(ids).anyMatch(i -> i == t.getComponentId()));
         return this;
     }
@@ -68,6 +92,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery subComponentId(int... ids) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(ids).anyMatch(i -> i == t.getSubComponentId()));
         return this;
     }
@@ -79,6 +105,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery hidden(boolean hidden) {
+        invalidateCache();
+
         this.root = this.root.and(t -> t.isHidden() == hidden);
         return this;
     }
@@ -90,6 +118,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery properties(int... properties) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(properties).anyMatch(i -> i == t.getProperties()));
         return this;
     }
@@ -101,6 +131,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery fontId(int... fontIds) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(fontIds).anyMatch(i -> i == t.getFontId()));
         return this;
     }
@@ -112,6 +144,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery color(int... colors) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(colors).anyMatch(i -> i == t.getColor()));
         return this;
     }
@@ -123,6 +157,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery alpha(int... alphas) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(alphas).anyMatch(i -> i == t.getAlpha()));
         return this;
     }
@@ -134,6 +170,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery itemId(int... itemIds) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(itemIds).anyMatch(i -> i == t.getItemId()));
         return this;
     }
@@ -146,6 +184,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery itemName(String name, BiFunction<String, CharSequence, Boolean> spred) {
+        invalidateCache();
+
         this.root = this.root.and(t -> {
             var itemName = ConfigManager.getItemProvider().provide(t.getItemId()).getName();
             return spred.apply(name, itemName);
@@ -170,6 +210,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery itemAmount(int... amounts) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(amounts).anyMatch(i -> i == t.getItemAmount()));
         return this;
     }
@@ -181,6 +223,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery spriteId(int... spriteIds) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(spriteIds).anyMatch(i -> i == t.getSpriteId()));
         return this;
     }
@@ -193,6 +237,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery text(BiFunction<String, CharSequence, Boolean> spred, String... text) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(text).anyMatch(i -> spred.apply(i, t.getText())));
         return this;
     }
@@ -205,6 +251,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery optionBasedText(BiFunction<String, CharSequence, Boolean> spred, String... text) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(text).anyMatch(i -> spred.apply(i, t.getOptionBase())));
         return this;
     }
@@ -217,6 +265,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery option(BiFunction<String, CharSequence, Boolean> spred, String... option) {
+        invalidateCache();
+
         this.root = this.root.and(t -> {
             var options = t.getOptions();
             return options != null && Arrays.stream(option).anyMatch(i -> i != null && options.stream().anyMatch(j -> j != null && spred.apply(i, j)));
@@ -241,6 +291,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery params(int... params) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(params).anyMatch(i -> t.getParams().containsKey(i)));
         return this;
     }
@@ -252,6 +304,8 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      * @return the updated ComponentQuery
      */
     public ComponentQuery children(int... ids) {
+        invalidateCache();
+
         this.root = this.root.and(t -> Arrays.stream(ids).anyMatch(i -> t.getChildren().stream().anyMatch(j -> j.getComponentId() == i)));
         return this;
     }
@@ -263,14 +317,14 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
      */
     @Override
     public ResultSet<Component> results() {
-        return new ResultSet<>(
+        return cache.getOrCompute(() -> new ResultSet<>(
                 Arrays.stream(ids)
                         .mapToObj(Interfaces::getInterface) // Map IDs to Interfaces
                         .filter(Objects::nonNull) // Filter out null interfaces
                         .flatMap(interfaceManager -> interfaceManager.getComponents().stream()) // Flatten components
                         .filter(this) // Apply the predicate (root.test)
                         .toList() // Collect the filtered components into a list
-        );
+        ));
     }
 
     /**
@@ -292,6 +346,10 @@ public class ComponentQuery implements Query<Component, ResultSet<Component>> {
     @Override
     public boolean test(Component comp) {
         return this.root.test(comp);
+    }
+
+    private void invalidateCache() {
+        cache.invalidate();
     }
 
 }
